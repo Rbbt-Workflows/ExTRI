@@ -1,0 +1,11 @@
+
+.job_control
+  = workflow_partial('job_result/job_control', workflow, task, locals)
+
+%img(src='?_format=raw')
+
+%dl
+  - job.info[:inputs].each do |k,v|
+    %dt= k
+    %dd= v.inspect
+

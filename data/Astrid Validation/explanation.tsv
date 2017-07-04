@@ -1,0 +1,14 @@
+ 	TRUE TF-TG            correct normalization	TRUE TF-TG, normaliz. may be incorrect	label	label-content	comment
+1	yes	yes	a	activate	 
+2	yes	yes	r	repress	 
+3	yes	yes	u	undecided	 
+4	yes	yes	b	both act & repr	 
+5	no	yes	n	TRE sentence, either TF or TG (or both) incorrectly normalized) - e.g. for these sentences it would make sense to mark a, r, u, b	 
+6	no	yes	s	non-mammalian species (most important for TF) - can be correct TRE-sentence	 
+7	no	no	t	not TF-(TF)TG autoregulation	TF mostly correctly normalized; often other TG in sentence
+8	no	no	ni	failed to identify the correct sentence entities as TG and/nor TF	 
+9	no	no	f	not TF-TG relation	high proportion of these are not GRE/TRE
+10	no	no	o	opposite TF-TG	 
+11	no	no	p	PPI	 
+12	no	no	c	co-expression, co-regulation 	 
+13	no	no	up	"TG" is not TG but upstream regulator of TF	 

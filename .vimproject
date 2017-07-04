@@ -1,0 +1,72 @@
+FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
+ workflow.rb
+ bin=bin{
+  add_small_scale_experiment.rb
+ }
+ doc=doc filter="*"{
+  Treminer.txt
+ }
+ lib=lib {
+  sinatra.rb
+  sources=rbbt/sources{
+   FNL.rb
+   HTRI.rb
+   TFCheckpoint.rb
+   TFClass.rb
+   TRRUST.rb
+  }
+  knowledge_base=rbbt/knowledge_base{
+   FNL.rb
+  }
+  tasks=rbbt/tasks/FNL{
+   clean.rb
+   database_coverage.rb
+   ner.rb
+   validation.rb
+   validation_samples.rb
+   statistics.rb
+   year.rb
+  }
+ }
+ data=data filter="*"{
+  Catalogues_2012-08-09_UTF8.txt
+  Encode
+  GOA
+  pmids2year_all.txt
+  TFclass_extended=TFclass_extended{
+   Include_non_TFClass_300317.tsv
+   salvage
+  }
+  Astrid Validation="Astrid Validation"{
+   explanation.tsv
+   validation_sample_lowscore_290317.tsv
+   validation_sample_pmids_280317_AL_124-labels.tsv
+   validation_samples_260317.tsv
+  }
+ }
+ share=share filter="*"{
+  databases=databases{
+   FNL.tar.gz
+   FNL=FNL{
+    Encode
+    GOA
+    Intact
+    HTRIDB
+    HTRIDB_HT_methods
+    TF
+    TFACTS
+   }
+  }
+ }
+
+ www=www {
+  views=views{
+   main.haml
+   FNL=FNL{
+    venn=venn{
+     job_result.haml
+    }
+   }
+  }
+ }
+}
