@@ -21,6 +21,7 @@ require 'rbbt/tasks/FNL/statistics'
 require 'rbbt/tasks/FNL/year'
 require 'rbbt/tasks/FNL/psicquic'
 require 'rbbt/tasks/FNL/biogateway'
+require 'rbbt/tasks/FNL/regulon'
 
 if __FILE__ == $0
   require 'rbbt/util/R'

@@ -15,7 +15,7 @@ module TRRUST
 
 
   TRRUST.claim TRRUST.tf_tg, :proc do 
-    url = "http://www.grnpedia.org/trrust/trrust_rawdata.txt"
+    url = "http://www.grnpedia.org/trrust/data/trrust_rawdata.human.tsv"
     tsv = TSV.open(url, :merge => true)
     tsv.key_field = "Transcription Factor (Associated Gene Name)"
     tsv.fields = ["Target Gene (Associated Gene Name)", "Regulation", "PMID"]

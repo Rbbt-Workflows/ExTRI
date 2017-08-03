@@ -28,6 +28,7 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    year.rb
    psicquic.rb
    biogateway.rb
+   regulon.rb
   }
  }
  data=data filter="*"{
