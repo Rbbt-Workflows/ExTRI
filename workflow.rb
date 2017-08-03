@@ -19,6 +19,8 @@ require 'rbbt/tasks/FNL/database_coverage'
 require 'rbbt/tasks/FNL/ner'
 require 'rbbt/tasks/FNL/statistics'
 require 'rbbt/tasks/FNL/year'
+require 'rbbt/tasks/FNL/psicquic'
+require 'rbbt/tasks/FNL/biogateway'
 
 if __FILE__ == $0
   require 'rbbt/util/R'

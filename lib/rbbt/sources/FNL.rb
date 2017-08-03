@@ -15,7 +15,7 @@ module FNL
 
     entrez_gene_index = {}
     TSV.traverse CMD.cmd('grep "^\(9606\|10090\|10116\)"', :in => Rbbt.share.databases.entrez.gene_info.open, :pipe => true), :type => :array do |line|
-      parts = line.split("\t")
+      parts = line.split("\t", -1)
       entrez = parts[1]
       external = parts[5]
       codes = external.split("|")
@@ -42,7 +42,7 @@ module FNL
     entrez_gene_index = FNL.entrez_gene_index
 
     TSV.traverse CMD.cmd('grep "^\(9606\|10090\|10116\)"', :in => Rbbt.share.databases.entrez.gene_info.open, :pipe => true), :type => :array do |line|
-      parts = line.split("\t")
+      parts = line.split("\t", -1)
       entrez = parts[1]
       external = parts[5]
       codes = external.split("|")
@@ -62,7 +62,7 @@ module FNL
     tsv = TSV.setup({}, :key_field => "UniProt/SwissProt Accession", :fields => ["Entrez Gene ID", "GO ID", "Evidence type", "Provider"], :type => :double)
 
     TSV.traverse text, :type => :array, :into => tsv do |line|
-      parts = line.split("\t")
+      parts = line.split("\t", -1)
       uniprot = parts[1]
       go_term = parts[4]
       evidence = parts[6]

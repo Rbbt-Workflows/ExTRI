@@ -64,6 +64,49 @@ module FNL
   end
 
   dep :validation_dataset
+  dep :FNL_clean
+  task :greco_format => :text do 
+    tsv = step(:validation_dataset).load.select("Valid" => "Valid")
+    fixed = step(:FNL_clean).load
+
+    name2ens = Organism.identifiers("Hsa/feb2014").index :persist => true
+    hashes = []
+    Log.tsv fixed
+    tsv.through do |pair,values|
+      iii [pair, fixed.include?(pair)]
+      sentence = fixed[pair]["Sentence"]
+      pmid, n, tf, tg = pair.split(":")
+
+      ens_tf = name2ens[tf]
+      ens_tg = name2ens[tg]
+
+      url_tf = "http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=#{ens_tf}"
+      url_tg = "http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=#{ens_tg}"
+      
+      
+      hashes << {
+        "ext_id": pmid, #pmid
+        "provider": "FNL", 
+        "anns": [
+          {
+            "exact": sentence,
+            "section": "abstract",
+            "tags": [
+              {"name": tf,
+               "uri": url_tf },
+               {"name": tg,
+                "uri": url_tg }
+            ]
+          }
+        ]
+      }
+    end
+
+
+    hashes.to_json
+  end
+
+  dep :validation_dataset
   dep :sentence_coverage_NER
   input :target, :integer, "Target number of sentences", 2000
   task :extended_validation_dataset => :tsv do |target|
@@ -74,8 +117,6 @@ module FNL
     if missing > 0 
       dataset_fields = dataset.fields.collect{|f| f.gsub(/[()]/,'').sub("Transcription Factor", "TF").sub("Target Gene", "TG") }
       tsv_fields = tsv.fields.collect{|f| f.gsub(/[()]/,'').sub("Transcription Factor", "TF").sub("Target Gene", "TG") }
-      iii dataset_fields
-      iii tsv_fields
 
       new_ids = (tsv.keys - current).shuffle[0..missing-1]
       new_ids.each do |id|
