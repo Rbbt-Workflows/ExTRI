@@ -4,8 +4,7 @@ module FNL
   input :tfs, :array, "TFs to consider"
   input :consensus, :integer, "Minumum number of DBs containing pair", 2
   input :high, :boolean, "Consider only high-confidence", true
-  input :sample, :float, "How many targets to select randomly", 1
-  task :regulon => :tsv do |tfs,consensus,high,sample|
+  task :regulon => :tsv do |tfs,consensus,high|
 
     dumper = TSV::Dumper.new(:key_field => "TF (Associated Gene Name)", :fields => ["TG (Associated Gene Name)", "Sign"], :type => :double)
     dumper.init
@@ -41,5 +40,8 @@ module FNL
       next unless (present - skip).length >= consensus
       [tf, [tg, sign]]
     end
+
+    TSV.collapse_stream dumper.stream
+
   end
 end
