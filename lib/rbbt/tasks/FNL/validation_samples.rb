@@ -121,4 +121,47 @@ module FNL
     new.reorder(:key, ["TF Associated Gene Name", "TG Associated Gene Name", "TF Text", "TG Text", "Sentence"])
   end
 
+  dep :validation_dataset
+  dep :sentence_coverage_NER
+  input :target, :integer, "Target number of sentences", 2000
+  task :extended_validation_dataset => :tsv do |target|
+    dataset = step(:validation_dataset).load
+    tsv = step(:sentence_coverage_NER).load
+    current = dataset.keys
+    missing = target - current.length
+    if missing > 0 
+      dataset_fields = dataset.fields.collect{|f| f.gsub(/[()]/,'').sub("Transcription Factor", "TF").sub("Target Gene", "TG") }
+      tsv_fields = tsv.fields.collect{|f| f.gsub(/[()]/,'').sub("Transcription Factor", "TF").sub("Target Gene", "TG") }
+
+      new_ids = (tsv.keys - current).shuffle[0..missing-1]
+      new_ids.each do |id|
+        values = tsv[id]
+        dataset_values = [nil] * dataset_fields.length
+        tsv_fields.zip(values).each do |field,value|
+          pos = dataset_fields.index field.gsub(/[()]/,'')
+          dataset_values[pos] = value if pos
+        end
+
+        dataset_values[dataset_fields.index("Set")] = "Extended"
+
+        dataset[id] = dataset_values
+      end
+      dataset
+    else
+      dataset
+    end
+
+    keys = dataset.keys
+    new_keys = keys[0..99]
+    new_keys.concat keys[100..-1].shuffle
+
+    new = dataset.annotate({})
+    new_keys.each do |k|
+      new[k] = dataset[k]
+    end
+
+    new
+  end
+
+
 end

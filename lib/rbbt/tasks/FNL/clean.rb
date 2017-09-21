@@ -1,7 +1,7 @@
 module FNL
 
   input :salvage, :boolean, "Salvage some non-TFClass TFs", false
-  task :flagged_tfs => :array do |salvage|
+  task :flagged_tfs_TFCheckpoint => :array do |salvage|
 
     cp = TFCheckpoint.tfs.tsv
 
@@ -31,8 +31,27 @@ module FNL
       good_tfs = tf_class
     end
 
-    fnl_fs = Misc.fixutf8(CMD.cmd("cut -f 2 '#{FNL.TF_full.find}' | sort -u").read).split("\n")
+    fnl_fs = Open.open(FNL.TF_full) do |io| Misc.fixutf8(CMD.cmd("cut -f 2 | sort -u", :in => io).read).split("\n") end
     fnl_fs - good_tfs - ["NFKB", "AP1"]
+  end
+
+  input :salvage, :boolean, "Salvage some non-TFClass TFs", false
+  task :flagged_tfs_GDRD => :array do |salvage|
+    require 'rbbt/sources/GTRD'
+
+    ens = GTRD.tfClass.list
+
+    translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+
+    good_tfs = translation.values_at(*ens).compact
+
+    fnl_fs = Open.open(FNL.TF_full) do |io| Misc.fixutf8(CMD.cmd("cut -f 2 | sort -u", :in => io).read).split("\n") end
+    fnl_fs - good_tfs - ["NFKB", "AP1"]
+  end
+
+  dep :flagged_tfs_GDRD
+  task :flagged_tfs => :array do
+    dependencies.first.load
   end
 
   dep :flagged_tfs
@@ -54,12 +73,327 @@ module FNL
   end
 
   dep :FNL_clean
+  task :FNL_postprocess => :tsv do
+    tsv = step(:FNL_clean).load
+
+    log :LPS, "Remove LPS" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"]
+        select = if tf == "IRF6" or tg == "IRF6"
+                   not sentence.include?("LPS") 
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:LPS), rejects)
+    end
+
+    log :GNAS, "Remove GNAS" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tf == "GNAS" or tg == "GNAS"
+                   not (sentence.include?("promoter") and sentence.include?("p2"))
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:GNAS), rejects)
+    end
+
+    log :ADAM, "Remove ADAM" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tf == "ADAM2" or tg == "ADAM2"
+                   sentence.include?("adam")
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:GNAS), rejects)
+    end
+
+    log :FOXC1, "Remove FOXC1" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tf == "FOXC1" or tg == "FOXC1"
+                   not sentence.include?("chip")
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:FOXC1), rejects)
+    end
+
+
+    log :CAT, "Remove CAT" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tf == "CAT" or tg == "CAT"
+                   sentence.include?("catalase")
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:CAT), rejects)
+    end
+
+    log :HDAC, "Remove HDAC" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg.include?("HDAC")
+                   false
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:HDAC), rejects)
+    end
+
+    log :ESR1, "Remove ESR1" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tf == "ESR1" or tg == "ESR1"
+                   not sentence.include?("stress")
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:ESR1), rejects)
+    end
+
+    log :MAPK, "Remove MAPK" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg =~ /^MAPK\d*$/
+                   false
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:MAPK), rejects)
+    end
+
+    log :PKC, "Remove PKC" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg =~ /^PKC\d*$/
+                   false
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:PKC), rejects)
+    end
+
+    log :AKT, "Remove AKT" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg =~ /^AKT\d*$/
+                   false
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:AKT), rejects)
+    end
+
+    log :PI3K, "Remove PI3K" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg =~ /^PI3K\d*$/
+                   false
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:PI3K), rejects)
+    end
+
+
+    log :CEL, "Remove CEL" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg == "CEL" or tf == "CEL"
+                   not sentence.include?("cell")
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:CEL), rejects)
+    end
+
+    log :ATP11C, "Remove ATP11C" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg == "ATP11C"
+                   not sentence.split(/[^\w]/).include? "ig"
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:ATP11C), rejects)
+    end
+
+    log :SUPT7L, "Remove SUPT7L" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg == "SUPT7L"
+                   not sentence.split(/[^\w]/).include? "gamma"
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:SUPT7L), rejects)
+    end
+
+    log :TPM1, "Remove TPM1" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg == "TPM1"
+                   not sentence.split(/[^\w]/).include? "alpha"
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:TPM1), rejects)
+    end
+
+    log :DLST, "Remove DLST" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg == "DLST"
+                   not sentence.split(/[^\w]/).include? "e2"
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:DLST), rejects)
+    end
+
+    log :TSC1, "Remove TSC1" do
+
+      rejects = ""
+      tsv = tsv.select do |k,v| 
+        tf, tg, *rest = v
+        sentence = v["Sentence"].downcase
+        select = if tg == "TSC1"
+                   not sentence.split(/[^\w]/).include? "suppressor"
+                 else
+                   true
+                 end
+        rejects << [k, v].flatten * "\t" << "\n" if not select
+        select
+      end
+
+      Open.write(file(:TSC1), rejects)
+    end
+
+    tsv
+  end
+
+  dep :FNL_postprocess
   task :FNL_counts => :tsv do
 
     pmid_counts = TSV.setup({}, :key_field => 'Pair', :fields => ["Counts"], :type => :single)
     sentence_counts = TSV.setup({}, :key_field => 'Triplet', :fields => ["Counts"], :type => :single)
 
-    TSV.traverse step(:FNL_clean) do |k,values|
+    TSV.traverse step(:FNL_postprocess) do |k,values|
       tf, tg = values.values_at(0,1)
       pair = [tf, tg] * ":"
       triplet = [tf, tg, k.split(":").first] * ":"
@@ -71,7 +405,7 @@ module FNL
 
     dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence", "PMID counts", "Sentence counts"], :type => :list, :namespace => FNL.organism
     dumper.init
-    TSV.traverse step(:FNL_clean), :into => dumper do |k,values|
+    TSV.traverse step(:FNL_postprocess), :into => dumper do |k,values|
       tf, tg = values.values_at(0,1)
       pair = [tf, tg] * ":"
       triplet = [tf, tg, k.split(":").first] * ":"

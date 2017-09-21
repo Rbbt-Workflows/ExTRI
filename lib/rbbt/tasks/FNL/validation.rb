@@ -63,6 +63,26 @@ module FNL
     validation
   end
 
+  dep :flagged_tfs
+  task :aug_validation_dataset => :tsv do
+    flagged_tfs = step(:flagged_tfs).load
+
+    validation_consensus = Rbbt.data["Astrid Validation"]["Consensus_280717_extended_data_v3.xlsx - consensus.tsv"].tsv :type => :list
+    validation_HC = Rbbt.data["Astrid Validation"]["validation_384_high-confidence_FNL_July_2017.xlsx - validation_July_2017.tsv"].tsv :type => :list
+
+    validation = TSV.setup({}, :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Valid"], :type => :single)
+
+    validation_consensus.through do |k,values|
+      validation[k] = values["Consensus"] == "V" ? "Valid" : "Not Valid"
+    end
+
+    validation_HC.through do |k,values|
+      validation[k] = values["validation"] == "V" ? "Valid" : "Not Valid"
+    end
+
+    validation
+  end
+
   dep :validation_dataset
   dep :FNL_clean
   task :greco_format => :text do 
@@ -71,9 +91,7 @@ module FNL
 
     name2ens = Organism.identifiers("Hsa/feb2014").index :persist => true
     hashes = []
-    Log.tsv fixed
     tsv.through do |pair,values|
-      iii [pair, fixed.include?(pair)]
       sentence = fixed[pair]["Sentence"]
       pmid, n, tf, tg = pair.split(":")
 
@@ -106,48 +124,6 @@ module FNL
     hashes.to_json
   end
 
-  dep :validation_dataset
-  dep :sentence_coverage_NER
-  input :target, :integer, "Target number of sentences", 2000
-  task :extended_validation_dataset => :tsv do |target|
-    dataset = step(:validation_dataset).load
-    tsv = step(:sentence_coverage_NER).load
-    current = dataset.keys
-    missing = target - current.length
-    if missing > 0 
-      dataset_fields = dataset.fields.collect{|f| f.gsub(/[()]/,'').sub("Transcription Factor", "TF").sub("Target Gene", "TG") }
-      tsv_fields = tsv.fields.collect{|f| f.gsub(/[()]/,'').sub("Transcription Factor", "TF").sub("Target Gene", "TG") }
-
-      new_ids = (tsv.keys - current).shuffle[0..missing-1]
-      new_ids.each do |id|
-        values = tsv[id]
-        dataset_values = [nil] * dataset_fields.length
-        tsv_fields.zip(values).each do |field,value|
-          pos = dataset_fields.index field.gsub(/[()]/,'')
-          dataset_values[pos] = value if pos
-        end
-
-        dataset_values[dataset_fields.index("Set")] = "Extended"
-
-        dataset[id] = dataset_values
-      end
-      dataset
-    else
-      dataset
-    end
-
-    keys = dataset.keys
-    new_keys = keys[0..99]
-    new_keys.concat keys[100..-1].shuffle
-
-    new = dataset.annotate({})
-    new_keys.each do |k|
-      new[k] = dataset[k]
-    end
-
-    new
-  end
-
   input :score, :float, "Score threshold", 1.6
   input :pmids, :integer, "Min number of PMIDS", 1000
   input :sentences, :integer, "Min number of sentences", 2
@@ -163,12 +139,12 @@ module FNL
   end
 
   dep :threshold 
-  dep :validation_dataset
+  dep :aug_validation_dataset
   task :threshold_evaluation => :yaml do 
     full = step(:threshold).step(:FNL_counts).load
     tsv = step(:threshold).load
 
-    validation = step(:validation_dataset).load
+    validation = step(:aug_validation_dataset).load
 
     all_validation_keys = validation.keys
 
@@ -204,14 +180,14 @@ module FNL
     step(:threshold).load.keys.collect{|k| k.split(":").values_at(2,3) * ":" }.uniq
   end
 
-  dep :validation_dataset
+  dep :aug_validation_dataset
   dep :FNL_counts
   task :prediction => :tsv do 
     full = step(:FNL_counts).load
-    validation = step(:validation_dataset).load
+    validation = step(:aug_validation_dataset).load
 
     all_validation_keys = validation.keys
-    valid_keys = validation.select("Valid" => true).keys
+    valid_keys = validation.select("Valid" => "Valid").keys
 
     require 'rbbt/util/R'
     train = full.select(all_validation_keys).attach validation, :fields => ["Valid"]

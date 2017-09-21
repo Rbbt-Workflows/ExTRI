@@ -5,6 +5,7 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
  }
  doc=doc filter="*"{
   Treminer.txt
+  ToDo.txt
  }
  lib=lib {
   sinatra.rb
@@ -20,14 +21,20 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
   }
   tasks=rbbt/tasks/FNL{
    clean.rb
-   database_coverage.rb
-   ner.rb
-   validation.rb
+
    validation_samples.rb
+   validation.rb
+
+   database_coverage.rb
+
+   ner.rb
+
    statistics.rb
    year.rb
+
    psicquic.rb
    biogateway.rb
+
    regulon.rb
   }
  }

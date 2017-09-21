@@ -1,0 +1,20 @@
+From our skype earlier:
+
+- Send statistics of counts of sentences by TF and by TG to explore posible
+  normalization problems
+- Incorporate new consensus validation into pipeline
+- Correct LPS and study other possible post processing issues
+- Gene Life cycle plots for TFs using PMIDs from Martin
+- Curation stack generation
+
+Let me know if I missed something
+
+Best
+
+M
+
+
+* Try confidence with and without the 300 high quality and compare predictions
+* Ask Martin Krallinger about missing TFs in Florian
+* Get lexicon
+* Remove general rules like HDAC, AKT

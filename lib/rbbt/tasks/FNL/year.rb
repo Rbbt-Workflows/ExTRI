@@ -71,13 +71,16 @@ module FNL
   task :TF_years => :tsv do
     pmid_details = step(:pmid_details).load
 
-    tf_years = TSV::Dumper.new(:key_field => "TF", :fields => ["Years"], :type => :single)
+    tf_years = TSV::Dumper.new(:key_field => "TF", :fields => ["Years"], :type => :flat)
+    tf_years.init
     TSV.traverse pmid_details, :into => tf_years do |pmid, values|
       year = values.first
       res = values[1..-1].flatten.collect{|p| p.split(":").first}.uniq.collect{|tf| [tf, year]}
       res.extend MultipleResult
       res
     end
+    
+    TSV.collapse_stream(tf_years.stream, :uniq => false)
   end
 
   dep :TF_years
@@ -89,5 +92,35 @@ module FNL
       min[tf] = years.collect{|y| y.to_i}.min
     end
     min
+  end
+
+  dep :TF_years
+  input :genes, :array, "Genes to consider (empty to consider all)"
+  extension :svg
+  task :life_cycle => :binary do |genes|
+    tsv = step(:TF_years).load
+    tsv = tsv.select(genes) if genes and genes.any?
+
+    counts = {}
+
+    tsv.through do |tf, articles|
+      next unless articles.length > 10
+      counts[tf.gsub('-', '_')] = Misc.counts(articles.collect{|pmid| "y" << pmid.gsub("-", '_')})
+    end
+
+    require 'rbbt/util/R'
+    R.run  <<-EOF, [:svg]
+      library(reshape)
+      library(ggplot2)
+
+      data = #{R.ruby2R(counts).gsub("),", "),\n")}
+      m = melt(data)
+      names(m) <- c("value", "Year", "Gene")
+
+      g <- ggplot(m, aes(Gene)) + geom_bar(aes(fill=Year, weight=value))
+      rbbt.SVG.save('#{self.path}', g)
+    EOF
+
+    nil
   end
 end

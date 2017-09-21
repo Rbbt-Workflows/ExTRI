@@ -177,4 +177,63 @@ module FNL
   end
 
   export :venn, :top
+
+  dep :FNL_clean
+  task :gene_sentence_counts => :tsv do
+    counts = TSV.setup({}, :key_field => "Associated Gene Name", :fields => ["Sentences as TF", "Sentences as TF"], :type => :list, :namespace => FNL.organism)
+    TSV.traverse step(:FNL_clean), :bar => self.progress_bar("Counting genes") do |id,values|
+      tf, tg, *rest = values
+      counts[tf] ||= [0,0]
+      counts[tg] ||= [0,0]
+      counts[tf] = [counts[tf][0] + 1, counts[tf][1]]
+      counts[tg] = [counts[tg][0], counts[tg][1] + 1]
+    end
+
+    tsv = step(:FNL_clean).load
+    tsv.monitor = true
+
+    word_counts = {}
+    tsv.through do |k,values|
+      tf, tg, *rest = values
+      word_counts[tf] ||= {}
+      word_counts[tg] ||= {}
+      sentence = values["Sentence"].downcase
+      sentence.split(/[^\w]/).each do |w|
+        word_counts[tf][w] ||= 0
+        word_counts[tf][w] += 1
+        word_counts[tg][w] ||= 0
+        word_counts[tg][w] += 1
+      end
+    end
+
+    counts.with_monitor do 
+      counts.add_field "Top words" do |gene,values|
+        words = word_counts[gene]
+        words.sort_by{|w,c| c}.reverse[0..10].collect{|w,c| "#{w} (#{c})" } * ", "
+      end
+    end
+
+    counts
+  end
+
+  dep :FNL_clean
+  input :gene, :string, "Gene name"
+  task :words => :tsv do |gene|
+    tsv = step(:FNL_clean).load
+    counts = {} 
+    tsv.with_monitor do
+      tsv.through do |k,v|
+        tf, tg, *rest = v
+        next unless tf == gene or tg == gene
+        sentence = v["Sentence"].downcase
+        sentence.split(/[^\w]/).each do |w|
+          counts[w] ||= 0
+          counts[w] +=1
+        end
+      end
+    end
+    TSV.setup(counts, :key_field => "Word", :fields => ["Counts"], :type => :single, :cast => :to_i)
+  end
+
+
 end
