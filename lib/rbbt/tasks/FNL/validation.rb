@@ -1,5 +1,29 @@
 module FNL
 
+
+  #{{{ Threshold
+
+  input :score, :float, "Score threshold", 1.6
+  input :pmids, :integer, "Min number of PMIDS", 1000
+  input :sentences, :integer, "Min number of sentences", 2
+  dep :FNL_counts, :compute => :produce
+  task :threshold => :tsv do |score, pmids, sentences|
+    tsv = step(:FNL_counts).load
+    selected = []
+    selected.concat tsv.select("Interaction score"){|s| s.to_f >= score }.keys
+    selected.concat tsv.select("PMID counts"){|s| s.to_f >= pmids }.keys
+    selected.concat tsv.select("Sentence counts"){|s| s.to_f >= sentences }.keys
+
+    tsv.select(selected)
+  end
+
+  dep :threshold
+  task :threshold_pairs => :array do 
+    step(:threshold).load.keys.collect{|k| k.split(":").values_at(2,3) * ":" }.uniq
+  end
+
+  #{{{ Validation datasets
+
   dep :flagged_tfs
   task :validation_dataset => :tsv do
     flagged_tfs = step(:flagged_tfs).load
@@ -63,128 +87,51 @@ module FNL
     validation
   end
 
-  dep :flagged_tfs
-  task :aug_validation_dataset => :tsv do
-    flagged_tfs = step(:flagged_tfs).load
-
+  dep :validation_dataset
+  input :only_consensus, :boolean, "Use only consensus sentences", true
+  task :aug_validation_dataset => :tsv do |only_consensus|
+    validation_dataset = step(:validation_dataset).load
     validation_consensus = Rbbt.data["Astrid Validation"]["Consensus_280717_extended_data_v3.xlsx - consensus.tsv"].tsv :type => :list
     validation_HC = Rbbt.data["Astrid Validation"]["validation_384_high-confidence_FNL_July_2017.xlsx - validation_July_2017.tsv"].tsv :type => :list
 
     validation = TSV.setup({}, :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Valid"], :type => :single)
 
-    validation_consensus.through do |k,values|
-      validation[k] = values["Consensus"] == "V" ? "Valid" : "Not Valid"
-    end
+    validation_dataset.through do |k,values|
+      validation[k] = values["Valid"] == "Valid" ? "Valid" : "Not Valid"
+    end unless only_consensus
 
     validation_HC.through do |k,values|
       validation[k] = values["validation"] == "V" ? "Valid" : "Not Valid"
+    end unless only_consensus
+
+    validation_consensus.through do |k,values|
+      consensus = values["Consensus"]
+      next if consensus == ""
+      validation[k] = consensus == "V" ? "Valid" : "Not Valid"
     end
 
     validation
   end
 
-  dep :validation_dataset
-  dep :FNL_clean
-  task :greco_format => :text do 
-    tsv = step(:validation_dataset).load.select("Valid" => "Valid")
-    fixed = step(:FNL_clean).load
-
-    name2ens = Organism.identifiers("Hsa/feb2014").index :persist => true
-    hashes = []
-    tsv.through do |pair,values|
-      sentence = fixed[pair]["Sentence"]
-      pmid, n, tf, tg = pair.split(":")
-
-      ens_tf = name2ens[tf]
-      ens_tg = name2ens[tg]
-
-      url_tf = "http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=#{ens_tf}"
-      url_tg = "http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=#{ens_tg}"
-      
-      
-      hashes << {
-        "ext_id": pmid, #pmid
-        "provider": "FNL", 
-        "anns": [
-          {
-            "exact": sentence,
-            "section": "abstract",
-            "tags": [
-              {"name": tf,
-               "uri": url_tf },
-               {"name": tg,
-                "uri": url_tg }
-            ]
-          }
-        ]
-      }
-    end
-
-
-    hashes.to_json
-  end
-
-  input :score, :float, "Score threshold", 1.6
-  input :pmids, :integer, "Min number of PMIDS", 1000
-  input :sentences, :integer, "Min number of sentences", 2
-  dep :FNL_counts, :compute => :produce
-  task :threshold => :tsv do |score, pmids, sentences|
-    tsv = step(:FNL_counts).load
-    selected = []
-    selected.concat tsv.select("Interaction score"){|s| s.to_f >= score }.keys
-    selected.concat tsv.select("PMID counts"){|s| s.to_f >= pmids }.keys
-    selected.concat tsv.select("Sentence counts"){|s| s.to_f >= sentences }.keys
-
-    tsv.select(selected)
-  end
-
-  dep :threshold 
-  dep :aug_validation_dataset
-  task :threshold_evaluation => :yaml do 
-    full = step(:threshold).step(:FNL_counts).load
-    tsv = step(:threshold).load
-
-    validation = step(:aug_validation_dataset).load
-
-    all_validation_keys = validation.keys
-
-    require 'rbbt/util/R'
-    train = full.select(all_validation_keys)
-    train = train.attach validation, :fields => ["Valid"]
-    data = nil
-    TmpFile.with_file do |file|
-      train.R <<-EOF
-      library(randomForest)
-      names(data) <- make.names(names(data))
-      data$Valid <- as.factor(data$Valid)
-      m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts, data=data)
-      save(m, file='#{file}')
-      EOF
-
-      data = tsv.R <<-EOF
-      library(randomForest)
-      names(data) <- make.names(names(data))
-      load('#{file}')
-      predictions = predict(m, data)
-      data = data.frame(predictions)
-      EOF
-    end
-
-    res = Misc.counts(data.column("predictions").values.flatten)
-    res["percent"] = 100 * res["Valid"] / (res["Valid"] + res["Not Valid"])
-    res
-  end
-
-  dep :threshold
-  task :threshold_pairs => :array do 
-    step(:threshold).load.keys.collect{|k| k.split(":").values_at(2,3) * ":" }.uniq
-  end
+  #{{{ Prediction model
 
   dep :aug_validation_dataset
   dep :FNL_counts
-  task :prediction => :tsv do 
+  dep :FNL_postprocess
+  input :post_process, :boolean, "Filter training sentences by postprocessing rules", false
+  input :test_set, :array, "Separate entries for testing", []
+  task :prediction => :tsv do |post_process,test_set|
     full = step(:FNL_counts).load
     validation = step(:aug_validation_dataset).load
+
+    if post_process
+      post = step(:FNL_postprocess).load
+      validation = validation.select(validation.keys & post.keys)
+    end
+
+    if test_set and test_set.any?
+      validation = validation.select(validation.keys - test_set)
+    end
 
     all_validation_keys = validation.keys
     valid_keys = validation.select("Valid" => "Valid").keys
@@ -216,23 +163,36 @@ module FNL
     data.select("predictions" => "Valid")
   end
 
+  #{{{ Add confidence to dataset
+  
   dep :FNL_counts, :compute => :produce
   dep :prediction, :compute => :produce
   dep :threshold, :compute => :produce
   task :FNL_confidence => :tsv  do
     predicted = Set.new step(:prediction).load.keys
     thresholded = Set.new step(:threshold).load.keys
+    signal_transd = Rbbt.data["signal_transd.list"].list
 
     tsv = step(:FNL_counts).load
     tsv.with_monitor do
     tsv.add_field "Prediction confidence" do |k,v|
-      predicted.include?(k) ? "High" : "Low"
+      tg = v["Target Gene (Associated Gene Name)"]
+      if signal_transd.include? tg
+        "Low"
+      else
+        predicted.include?(k) ? "High" : "Low"
+      end
     end
 
     score, pmids, sentences  = step(:threshold).inputs.values_at :score, :pmids, :sentences
     criteria = "score: #{score}; min # PMID: #{pmids}; min # Sentences in PMID: #{sentences}"
     tsv.add_field "Threshold confidence (#{criteria})" do |k,v|
-      thresholded.include?(k) ? "High" : "Low"
+      tg = v["Target Gene (Associated Gene Name)"]
+      if signal_transd.include? tg
+        "Low"
+      else
+        thresholded.include?(k) ? "High" : "Low"
+      end
     end
     end
 

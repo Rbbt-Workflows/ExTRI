@@ -6,6 +6,8 @@ require 'rbbt/sources/organism'
 module FNL
   extend Resource
   self.subdir = 'share/databases/FNL'
+  self.set_libdir
+  self.search_paths.merge!(:default => :lib)
 
   def self.organism
     "Hsa/oct2016"
@@ -28,9 +30,6 @@ module FNL
 
     entrez_gene_index
   end
-
-  self.search_paths = {}
-  self.search_paths[:default] = :lib
 
 
   FNL.claim FNL.GOA, :proc do 

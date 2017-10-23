@@ -81,7 +81,7 @@ module FNL
     end
   end
 
-  dep :FNL_confidence
+  dep :FNL_confidence, :test_set => []
   task :sentence_coverage => :tsv do
     id_file = Organism.identifiers(FNL.organism)
 
@@ -118,7 +118,7 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
 
 
   EOF
-  dep :FNL_confidence, :pmids => 2, :sentences => 2, :score => 1.6
+  dep :FNL_confidence, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
   task :pairs => :tsv do
     id_file = Organism.identifiers(FNL.organism)
 

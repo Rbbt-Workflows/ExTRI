@@ -36,7 +36,7 @@ module FNL
   end
 
   input :salvage, :boolean, "Salvage some non-TFClass TFs", false
-  task :flagged_tfs_GDRD => :array do |salvage|
+  task :flagged_tfs_GTRD => :array do |salvage|
     require 'rbbt/sources/GTRD'
 
     ens = GTRD.tfClass.list
@@ -49,7 +49,7 @@ module FNL
     fnl_fs - good_tfs - ["NFKB", "AP1"]
   end
 
-  dep :flagged_tfs_GDRD
+  dep :flagged_tfs_GTRD
   task :flagged_tfs => :array do
     dependencies.first.load
   end
@@ -72,328 +72,97 @@ module FNL
     Misc.sort_stream(dumper.stream)
   end
 
+
+  helper :sentence_contains do |sentence,pattern|
+    parts = pattern.split(/[&!]/)
+    matches = parts.collect do |part|
+      sent = part.downcase == part ? sentence.downcase : sentence
+      if part =~ /^\w+$/
+        sent.split(/[^\w]/).include? part
+      else
+        sent =~ /\W#{part}\W/i
+      end
+    end
+    if pattern.include? "&"
+      matches.inject(true){|acc,e| acc = acc && e}
+    elsif pattern.include? "|"
+      matches.inject(false){|acc,e| acc = acc || e}
+    else
+      matches.first
+    end
+  end
+
   dep :FNL_clean
   task :FNL_postprocess => :tsv do
     tsv = step(:FNL_clean).load
 
-    log :LPS, "Remove LPS" do
+    TSV.traverse Rbbt.data["post_process_rules.tsv"].find(:lib), :type => :array do |line|
+      next if line =~ /^#/
+      rtf,rtg,has,hasnot,exact = line.split(",").collect{|v| v.empty? ? nil : v}
 
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"]
-        select = if tf == "IRF6" or tg == "IRF6"
-                   not sentence.include?("LPS") 
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
+      gene = [rtf,rtg].compact.first
+
+      log gene, "Removing #{gene}. Has: '#{has}'; has not: '#{hasnot}'; rescue exact HGNC: '#{exact}'" do
+        rejects = []
+
+        tsv = tsv.select do |k,v|
+          tf, tg, *rest = v
+          sentence = v["Sentence"]
+
+          reject = false
+          if (rtf and tf =~ /^#{rtf}$/) or (rtg and tg =~ /^#{rtg}$/)
+            if has 
+              reject = true if sentence_contains(sentence, has)
+            else
+              reject = true
+            end
+
+            if hasnot
+              reject = false if sentence_contains(sentence, hasnot)
+            end
+
+            if exact == 'true'
+              reject = false if sentence_contains(sentence, gene)
+            end
+          end
+
+          rejects << [k, v].flatten * "\t" if reject
+          ! reject
+        end
+
+        Open.write(file(gene), rejects * "\n")
       end
-
-      Open.write(file(:LPS), rejects)
     end
 
-    log :GNAS, "Remove GNAS" do
+    log :HDACS_list, "Remove all HDACs" do
+      rejects = []
+      hdacs = Rbbt.data["hdacs.list"].list
 
-      rejects = ""
-      tsv = tsv.select do |k,v| 
+      tsv = tsv.select do |k,v|
         tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tf == "GNAS" or tg == "GNAS"
-                   not (sentence.include?("promoter") and sentence.include?("p2"))
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
+
+        reject = hdacs.include? tg
+
+        rejects << [k, v].flatten * "\t" if reject
+        ! reject
       end
 
-      Open.write(file(:GNAS), rejects)
-    end
-
-    log :ADAM, "Remove ADAM" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tf == "ADAM2" or tg == "ADAM2"
-                   sentence.include?("adam")
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:GNAS), rejects)
-    end
-
-    log :FOXC1, "Remove FOXC1" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tf == "FOXC1" or tg == "FOXC1"
-                   not sentence.include?("chip")
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:FOXC1), rejects)
-    end
-
-
-    log :CAT, "Remove CAT" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tf == "CAT" or tg == "CAT"
-                   sentence.include?("catalase")
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:CAT), rejects)
-    end
-
-    log :HDAC, "Remove HDAC" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg.include?("HDAC")
-                   false
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:HDAC), rejects)
-    end
-
-    log :ESR1, "Remove ESR1" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tf == "ESR1" or tg == "ESR1"
-                   not sentence.include?("stress")
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:ESR1), rejects)
-    end
-
-    log :MAPK, "Remove MAPK" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg =~ /^MAPK\d*$/
-                   false
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:MAPK), rejects)
-    end
-
-    log :PKC, "Remove PKC" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg =~ /^PKC\d*$/
-                   false
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:PKC), rejects)
-    end
-
-    log :AKT, "Remove AKT" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg =~ /^AKT\d*$/
-                   false
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:AKT), rejects)
-    end
-
-    log :PI3K, "Remove PI3K" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg =~ /^PI3K\d*$/
-                   false
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:PI3K), rejects)
-    end
-
-
-    log :CEL, "Remove CEL" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg == "CEL" or tf == "CEL"
-                   not sentence.include?("cell")
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:CEL), rejects)
-    end
-
-    log :ATP11C, "Remove ATP11C" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg == "ATP11C"
-                   not sentence.split(/[^\w]/).include? "ig"
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:ATP11C), rejects)
-    end
-
-    log :SUPT7L, "Remove SUPT7L" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg == "SUPT7L"
-                   not sentence.split(/[^\w]/).include? "gamma"
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:SUPT7L), rejects)
-    end
-
-    log :TPM1, "Remove TPM1" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg == "TPM1"
-                   not sentence.split(/[^\w]/).include? "alpha"
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:TPM1), rejects)
-    end
-
-    log :DLST, "Remove DLST" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg == "DLST"
-                   not sentence.split(/[^\w]/).include? "e2"
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:DLST), rejects)
-    end
-
-    log :TSC1, "Remove TSC1" do
-
-      rejects = ""
-      tsv = tsv.select do |k,v| 
-        tf, tg, *rest = v
-        sentence = v["Sentence"].downcase
-        select = if tg == "TSC1"
-                   not sentence.split(/[^\w]/).include? "suppressor"
-                 else
-                   true
-                 end
-        rejects << [k, v].flatten * "\t" << "\n" if not select
-        select
-      end
-
-      Open.write(file(:TSC1), rejects)
+      Open.write(file("HDACS_list"), rejects * "\n")
     end
 
     tsv
   end
 
   dep :FNL_postprocess
-  task :FNL_counts => :tsv do
+  input :skip_post_process, :boolean, "Skip post_processing", false
+  task :FNL_counts => :tsv do |skip_post_process|
 
     pmid_counts = TSV.setup({}, :key_field => 'Pair', :fields => ["Counts"], :type => :single)
     sentence_counts = TSV.setup({}, :key_field => 'Triplet', :fields => ["Counts"], :type => :single)
 
-    TSV.traverse step(:FNL_postprocess) do |k,values|
+    dep = skip_post_process ? step(:FNL_postprocess).step(:FNL_clean) : step(:FNL_postprocess)
+
+    TSV.traverse dep do |k,values|
       tf, tg = values.values_at(0,1)
       pair = [tf, tg] * ":"
       triplet = [tf, tg, k.split(":").first] * ":"
@@ -405,7 +174,7 @@ module FNL
 
     dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence", "PMID counts", "Sentence counts"], :type => :list, :namespace => FNL.organism
     dumper.init
-    TSV.traverse step(:FNL_postprocess), :into => dumper do |k,values|
+    TSV.traverse dep, :into => dumper do |k,values|
       tf, tg = values.values_at(0,1)
       pair = [tf, tg] * ":"
       triplet = [tf, tg, k.split(":").first] * ":"
@@ -415,6 +184,15 @@ module FNL
     end
   end
 
+  #dep :FNL_postprocess
+  #task :FNL_upstream_regulators => :tsv do
+  #  upstream = Rbbt.data["hdacs_etc.list"].find(:lib).list
+  #  TSV.traverse step(:FNL_postprocess), :type => :array, :into => :stream do |line|
+  #    tg = line.split("\t")[2] 
+  #    next unless upstream.include? tg
+  #    line
+  #  end
+  #end
 
   #dep :flagged_tfs
   #task :sentence_coverage_subset => :tsv do

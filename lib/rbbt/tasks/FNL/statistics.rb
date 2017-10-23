@@ -180,7 +180,7 @@ module FNL
 
   dep :FNL_clean
   task :gene_sentence_counts => :tsv do
-    counts = TSV.setup({}, :key_field => "Associated Gene Name", :fields => ["Sentences as TF", "Sentences as TF"], :type => :list, :namespace => FNL.organism)
+    counts = TSV.setup({}, :key_field => "Associated Gene Name", :fields => ["Sentences as TF", "Sentences as TG"], :type => :list, :namespace => FNL.organism)
     TSV.traverse step(:FNL_clean), :bar => self.progress_bar("Counting genes") do |id,values|
       tf, tg, *rest = values
       counts[tf] ||= [0,0]

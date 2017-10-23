@@ -42,6 +42,19 @@ module FNL
     end
 
     TSV.collapse_stream dumper.stream
+  end
 
+  dep :regulon
+  task :tf_modules => :text do
+    TSV.traverse step(:regulon), :into => :stream do |tf,values|
+      targets = Misc.zip_fields(values).collect do |target,sign|
+        if sign and not sign.empty?
+          target + "[#{sign}]"
+        else
+          target
+        end
+      end
+      [tf, nil, targets] * "\t"
+    end
   end
 end

@@ -24,18 +24,20 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
 
    validation_samples.rb
    validation.rb
+   validation_evaluation.rb
 
    database_coverage.rb
 
    ner.rb
+
+   regulon.rb
 
    statistics.rb
    year.rb
 
    psicquic.rb
    biogateway.rb
-
-   regulon.rb
+   greco.rb
   }
  }
  data=data filter="*"{
@@ -43,12 +45,18 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
   Encode
   GOA
   pmids2year_all.txt
+  post_process_rules.tsv
+  hdacs_etc.list
+  signal_transd.list
+  hdacs.list
   TFclass_extended=TFclass_extended{
    Include_non_TFClass_300317.tsv
    salvage
   }
   Astrid Validation="Astrid Validation"{
+   Consensus_280717_extended_data_v3.xlsx - consensus.tsv
    explanation.tsv
+   validation_384_high-confidence_FNL_July_2017.xlsx - validation_July_2017.tsv
    validation_sample_lowscore_290317.tsv
    validation_sample_pmids_280317_AL_124-labels.tsv
    validation_samples_260317.tsv

@@ -15,6 +15,7 @@ end
 
 require 'rbbt/tasks/FNL/clean'
 require 'rbbt/tasks/FNL/validation'
+require 'rbbt/tasks/FNL/validation_evaluation'
 require 'rbbt/tasks/FNL/database_coverage'
 require 'rbbt/tasks/FNL/ner'
 require 'rbbt/tasks/FNL/statistics'
@@ -22,6 +23,7 @@ require 'rbbt/tasks/FNL/year'
 require 'rbbt/tasks/FNL/psicquic'
 require 'rbbt/tasks/FNL/biogateway'
 require 'rbbt/tasks/FNL/regulon'
+require 'rbbt/tasks/FNL/greco'
 
 if __FILE__ == $0
   require 'rbbt/util/R'
