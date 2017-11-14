@@ -96,47 +96,46 @@ module FNL
   task :FNL_postprocess => :tsv do
     tsv = step(:FNL_clean).load
 
-    TSV.traverse Rbbt.data["post_process_rules.tsv"].find(:lib), :type => :array do |line|
+    TSV.traverse Rbbt.root.data["post_process_rules.tsv"].find(:lib), :type => :array do |line|
       next if line =~ /^#/
       rtf,rtg,has,hasnot,exact = line.split(",").collect{|v| v.empty? ? nil : v}
 
       gene = [rtf,rtg].compact.first
 
-      log gene, "Removing #{gene}. Has: '#{has}'; has not: '#{hasnot}'; rescue exact HGNC: '#{exact}'" do
-        rejects = []
+      rejects = []
 
-        tsv = tsv.select do |k,v|
-          tf, tg, *rest = v
-          sentence = v["Sentence"]
+      tsv = tsv.select do |k,v|
+        tf, tg, *rest = v
+        sentence = v["Sentence"]
 
-          reject = false
-          if (rtf and tf =~ /^#{rtf}$/) or (rtg and tg =~ /^#{rtg}$/)
-            if has 
-              reject = true if sentence_contains(sentence, has)
-            else
-              reject = true
-            end
-
-            if hasnot
-              reject = false if sentence_contains(sentence, hasnot)
-            end
-
-            if exact == 'true'
-              reject = false if sentence_contains(sentence, gene)
-            end
+        reject = false
+        if (rtf and tf =~ /^#{rtf}$/) or (rtg and tg =~ /^#{rtg}$/)
+          if has 
+            reject = true if sentence_contains(sentence, has)
+          else
+            reject = true
           end
 
-          rejects << [k, v].flatten * "\t" if reject
-          ! reject
+          if hasnot
+            reject = false if sentence_contains(sentence, hasnot)
+          end
+
+          if exact == 'true'
+            reject = false if sentence_contains(sentence, gene)
+          end
         end
 
-        Open.write(file(gene), rejects * "\n")
+        rejects << [k, v].flatten * "\t" if reject
+        ! reject
       end
+
+      Open.write(file(gene), rejects * "\n")
+      log gene, "Removed #{gene}. Has: '#{has}'; has not: '#{hasnot}'; rescue exact HGNC: '#{exact}' - #{rejects.length} removed"
     end
 
     log :HDACS_list, "Remove all HDACs" do
       rejects = []
-      hdacs = Rbbt.data["hdacs.list"].list
+      hdacs = Rbbt.root.data["hdacs.list"].list
 
       tsv = tsv.select do |k,v|
         tf, tg, *rest = v

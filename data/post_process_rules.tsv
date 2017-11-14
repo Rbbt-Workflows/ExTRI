@@ -21,9 +21,8 @@ HAND1,,th1,,true
 ,CDH17,,cadherin&17,true
 GLI2,,THP-1,,false
 GLI3,,DNA&binding&protein,,false
-PARP1,PARP1,PARP-?2,,false
+PARP1,PARP1,PARP(-)?2,,false
 T,,brachyury,,false
-TPM1,TPM1,alpha,,true
 ,MAPK1,p40,,true
 ,CD74,II,,true
 ,GFM1,mitochondrial,,true
