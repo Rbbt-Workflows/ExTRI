@@ -14,8 +14,9 @@ module FNL
       gn1, gn2 = translation.values_at g1, g2
       #Log.error "Gene not found in translation file: " + g1 if gn1.nil?
       #Log.error "Gene not found in translation file: " + g2 if gn2.nil?
-      gn1 = g1 if gn1.nil?
-      gn2 = g2 if gn2.nil?
+      gn1 = g1 if gn1.nil? && (NFKB_SYN + AP1_SYN).include?(g1)
+      gn2 = g2 if gn2.nil? && (NFKB_SYN + AP1_SYN).include?(g2)
+      next if gn1.nil? or gn2.nil?
       #Log.info "TF Translation " << [g1, gn1] * " => " if g1 != gn1
       #Log.info "TG Translation " << [g2, gn2] * " => " if g2 != gn2
       npair = [gn1, gn2] * ":"
@@ -86,11 +87,18 @@ module FNL
     id_file = Organism.identifiers(FNL.organism)
 
     encode = FNL.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    goa = FNL.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    intact = FNL.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+
+    #goa = FNL.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    goa = GO.tf_tg.tsv(:merge => true).unzip
+
+    #intact = FNL.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    intact = Intact.tf_tg.tsv(:merge => true).unzip
+
     tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
-    trrust = TRRUST.tf_tg.tsv(:merge => true).unzip
+    trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
     htri = HTRI.tf_tg.tsv(:merge => true).unzip
+    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).unzip
+    thomas = FNL.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true).unzip
 
     flagged = FNL.TFacts_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
@@ -106,6 +114,8 @@ module FNL
     tsv = attach_db tsv, encode, "Encode"
     tsv = attach_db tsv, goa, "GOA"
     tsv = attach_db tsv, intact, "Intact"
+    tsv = attach_db tsv, signor, "Signor"
+    tsv = attach_db tsv, thomas, "Thomas2015"
 
     tsv
   end
@@ -123,11 +133,18 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
     id_file = Organism.identifiers(FNL.organism)
 
     encode = FNL.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    goa = FNL.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    intact = FNL.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+
+    #goa = FNL.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    goa = GO.tf_tg.tsv(:merge => true).unzip
+
+    #intact = FNL.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    intact = Intact.tf_tg.tsv(:merge => true).unzip
+
     tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
-    trrust = TRRUST.tf_tg.tsv(:merge => true).unzip
+    trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
     htri = HTRI.tf_tg.tsv(:merge => true).unzip
+    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).unzip
+    thomas = FNL.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     cp = TFCheckpoint.tfs.tsv(:merge => true)
 
     flagged = FNL.TFacts_flagged_articles.list
@@ -166,9 +183,13 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       [trrust, "TRRUST"],
       [tfacts, "TFacts"],
       [encode, "Encode"],
+      [intact, "Intact"],
       [goa, "GOA"],
-      [intact, "Intact"]
+      [signor, "Signor"],
+      [thomas, "Thomas2015"]
     ].each do |db,name|
+      log :adding_db, name
+
       db.key_field = tsv.key_field
 
       tsv = attach_db tsv, db, name
@@ -176,8 +197,13 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       db = normalize_db db
       db.through do |k, values|
         next if tsv.include? k
-        new_values = k.split(":") + ([""] * (tsv.fields.length - 3 - db.fields.length)) + [name] + values
-        tsv[k] = new_values
+        begin
+          new_values = k.split(":") + ([""] * (tsv.fields.length - 3 - db.fields.length)) + [name] + values
+          tsv[k] = new_values
+        rescue
+          iii [k,values]
+          raise $!
+        end
       end
     end
 

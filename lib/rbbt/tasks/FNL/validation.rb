@@ -145,6 +145,7 @@ module FNL
       library(randomForest)
       names(data) <- make.names(names(data))
       data$Valid <- as.factor(data$Valid)
+      #m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts + Sentence.pairs + Sentence.pair.density, data=data)
       m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts, data=data)
       save(m, file='#{file}')
       EOF

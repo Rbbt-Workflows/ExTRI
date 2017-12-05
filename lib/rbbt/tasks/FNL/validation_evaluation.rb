@@ -1,40 +1,40 @@
 module FNL
 
-  dep :threshold 
-  dep :aug_validation_dataset
-  task :threshold_evaluation => :yaml do 
-    full = step(:threshold).step(:FNL_counts).load
-    tsv = step(:threshold).load
-    validation = step(:aug_validation_dataset).load
+  #dep :threshold 
+  #dep :aug_validation_dataset
+  #task :threshold_evaluation => :yaml do 
+  #  full = step(:threshold).step(:FNL_counts).load
+  #  tsv = step(:threshold).load
+  #  validation = step(:aug_validation_dataset).load
 
-    all_validation_keys = validation.keys
+  #  all_validation_keys = validation.keys
 
-    require 'rbbt/util/R'
-    train = full.select(all_validation_keys)
-    train = train.attach validation, :fields => ["Valid"]
-    data = nil
-    TmpFile.with_file do |file|
-      train.R <<-EOF
-      library(randomForest)
-      names(data) <- make.names(names(data))
-      data$Valid <- as.factor(data$Valid)
-      m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts, data=data)
-      save(m, file='#{file}')
-      EOF
+  #  require 'rbbt/util/R'
+  #  train = full.select(all_validation_keys)
+  #  train = train.attach validation, :fields => ["Valid"]
+  #  data = nil
+  #  TmpFile.with_file do |file|
+  #    train.R <<-EOF
+  #    library(randomForest)
+  #    names(data) <- make.names(names(data))
+  #    data$Valid <- as.factor(data$Valid)
+  #    m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts + Sentence.pairs, data=data)
+  #    save(m, file='#{file}')
+  #    EOF
 
-      data = tsv.R <<-EOF
-      library(randomForest)
-      names(data) <- make.names(names(data))
-      load('#{file}')
-      predictions = predict(m, data)
-      data = data.frame(predictions)
-      EOF
-    end
+  #    data = tsv.R <<-EOF
+  #    library(randomForest)
+  #    names(data) <- make.names(names(data))
+  #    load('#{file}')
+  #    predictions = predict(m, data)
+  #    data = data.frame(predictions)
+  #    EOF
+  #  end
 
-    res = Misc.counts(data.column("predictions").values.flatten)
-    res["percent"] = 100 * res["Valid"] / (res["Valid"] + res["Not Valid"])
-    res
-  end
+  #  res = Misc.counts(data.column("predictions").values.flatten)
+  #  res["percent"] = 100 * res["Valid"] / (res["Valid"] + res["Not Valid"])
+  #  res
+  #end
 
   dep :aug_validation_dataset
   dep :FNL_confidence
@@ -43,7 +43,7 @@ module FNL
     vali = step(:aug_validation_dataset).load
     conf = step(:FNL_confidence).load
 
-    if test_set
+    if test_set && test_set.any?
       vali = vali.select(test_set)
     end
 
@@ -52,6 +52,10 @@ module FNL
     
     all = vali.keys
 
+    thrf = conf.fields.select do |f|
+      f.include? "Threshold"
+    end.first
+
     cvalid = conf.select("Prediction confidence" => "High").keys & all
     cnovalid = (conf.keys - cvalid) & all
 
@@ -59,6 +63,8 @@ module FNL
     fp = cvalid & novalid
     tn = cnovalid & novalid
     fn = cnovalid & valid
+    precision = tp.length.to_f / (tp + fp).length
+    recall = tp.length.to_f / (tp + fn).length
 
     tsv = TSV.setup({}, :key_field => "Statistic", :fields => ["Value"], :cast => :to_f, :type => :single)
     tsv["TP"] = tp.length
@@ -67,6 +73,9 @@ module FNL
     tsv["FN"] = fn.length
     tsv["TPR"] = tp.length.to_f / cvalid.length
     tsv["TNR"] = tn.length.to_f / cnovalid.length
+    tsv["Precision"] = precision
+    tsv["Recall"] = recall
+    tsv["F1"] = 2 * (precision * recall) /  (precision + recall)
 
 
     tsv
@@ -107,6 +116,47 @@ module FNL
       Misc.mean(values)
     end
     res
+  end
+
+  dep :aug_validation_dataset
+  dep :FNL_confidence
+  task :FNL_threshold_evaluation => :tsv do 
+    vali = step(:aug_validation_dataset).load
+    conf = step(:FNL_confidence).load
+
+    valid = vali.select("Valid" => "Valid").keys
+    novalid = vali.keys - valid
+    
+    all = vali.keys
+
+    thrf = conf.fields.select do |f|
+      f.include? "Threshold"
+    end.first
+
+    cvalid = conf.select(thrf => "High").keys & all
+    cnovalid = (conf.keys - cvalid) & all
+
+    tp = cvalid & valid
+    fp = cvalid & novalid
+    tn = cnovalid & novalid
+    fn = cnovalid & valid
+    precision = tp.length.to_f / (tp + fp).length
+    recall = tp.length.to_f / (tp + fn).length
+
+    tsv = TSV.setup({}, :key_field => "Statistic", :fields => ["Value"], :cast => :to_f, :type => :single)
+    tsv["TP"] = tp.length
+    tsv["FP"] = fp.length
+    tsv["TN"] = tn.length
+    tsv["FN"] = fn.length
+    tsv["TPR"] = tp.length.to_f / cvalid.length
+    tsv["TNR"] = tn.length.to_f / cnovalid.length
+    tsv["Precision"] = precision
+    tsv["Recall"] = recall
+    tsv["F1"] = 2 * (precision * recall) /  (precision + recall)
+
+
+    tsv
+    
   end
 
   dep :FNL_confidence, :only_consensus => :placeholder do |jobname, options|

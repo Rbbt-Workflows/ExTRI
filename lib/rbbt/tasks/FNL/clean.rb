@@ -158,28 +158,34 @@ module FNL
 
     pmid_counts = TSV.setup({}, :key_field => 'Pair', :fields => ["Counts"], :type => :single)
     sentence_counts = TSV.setup({}, :key_field => 'Triplet', :fields => ["Counts"], :type => :single)
+    sentence_pairs = TSV.setup({}, :key_field => 'Sentence', :fields => ["Counts"], :type => :single)
 
     dep = skip_post_process ? step(:FNL_postprocess).step(:FNL_clean) : step(:FNL_postprocess)
 
     TSV.traverse dep do |k,values|
       tf, tg = values.values_at(0,1)
+      sentence = k.split(":").values_at(0,1) * ":"
       pair = [tf, tg] * ":"
       triplet = [tf, tg, k.split(":").first] * ":"
       pmid_counts[pair] ||= 0
       pmid_counts[pair] += 1
       sentence_counts[triplet] ||= 0
       sentence_counts[triplet] += 1
+      sentence_pairs[sentence] ||= 0
+      sentence_pairs[sentence] += 1
     end
 
-    dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence", "PMID counts", "Sentence counts"], :type => :list, :namespace => FNL.organism
+    dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence", "PMID counts", "Sentence counts", "Sentence pairs", "Sentence length", "Sentence pair density"], :type => :list, :namespace => FNL.organism
     dumper.init
     TSV.traverse dep, :into => dumper do |k,values|
       tf, tg = values.values_at(0,1)
       pair = [tf, tg] * ":"
       triplet = [tf, tg, k.split(":").first] * ":"
+      sentence = k.split(":").values_at(0,1) * ":"
       pmid_c = pmid_counts[pair] 
       sentence_c = sentence_counts[triplet]
-      [k, values + [pmid_c, sentence_c]]
+      sentence_p = sentence_pairs[sentence]
+      [k, values + [pmid_c, sentence_c, sentence_p, sentence.length, sentence_p.to_f / sentence.length]]
     end
   end
 

@@ -18,3 +18,5 @@ M
 * Ask Martin Krallinger about missing TFs in Florian
 * Get lexicon
 * Remove general rules like HDAC, AKT
+
+- Add Signor

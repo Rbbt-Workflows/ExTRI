@@ -8,6 +8,9 @@ require 'rbbt/sources/HTRI'
 require 'rbbt/sources/TRRUST'
 require 'rbbt/sources/tfacts'
 require 'rbbt/sources/TFCheckpoint'
+require 'rbbt/sources/signor'
+require 'rbbt/sources/GOA'
+require 'rbbt/sources/Intact'
 
 module FNL
   extend Workflow

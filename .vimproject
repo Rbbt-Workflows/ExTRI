@@ -11,7 +11,9 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
   sinatra.rb
   sources=rbbt/sources{
    FNL.rb
+   GOA.rb
    HTRI.rb
+   Intact.rb
    TFCheckpoint.rb
    TFClass.rb
    TRRUST.rb
@@ -69,6 +71,7 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
     Encode
     GOA
     Intact
+    Intact.new_query.20172111
     HTRIDB
     HTRIDB_HT_methods
     TF

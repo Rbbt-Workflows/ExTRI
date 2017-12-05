@@ -2,6 +2,7 @@ require 'rbbt-util'
 require 'rbbt/resource'
 
 require 'rbbt/sources/organism'
+require 'rbbt/sources/PRO'
 
 module FNL
   extend Resource
@@ -203,9 +204,36 @@ module FNL
     flagged * "\n"
   end
 
-  FNL.claim FNL.flagged_TFs, :proc do
+  FNL.claim FNL.Thomas2015, :proc do
+    mgi2uni = Organism.identifiers("Mmu/feb2014").index :target => "Associated Gene Name", :persist => true
+    uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
+    uni2name = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :persist => true
+
+    thomas = FNL.Nov2017_update.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true, :type => :double)
+
+    new = thomas.annotate({})
+
+    thomas.through do |tf,values|
+      Misc.zip_fields(values).each do |tg,*rest|
+
+        tf_alts = [tf, mgi2uni[tf]].compact
+        tf_alts += uni_equivalences.values_at(*tf_alts).flatten.compact
+        tf_new = uni2name.values_at(*tf_alts).compact.first
+
+        tg_alts = [tg, mgi2uni[tg]].compact.flatten
+        tg_alts += uni_equivalences.values_at(*tg_alts).flatten.compact
+        tg_new = uni2name.values_at(*tg_alts).compact.first
+
+        next if tg_new.nil? or tf_new.nil?
+        new_values = [tg_new] + rest
+        new.zip_new(tf_new, new_values)
+      end
+    end
+
+    new
   end
+
 end
 
-Log.tsv FNL.Intact.produce(true).tsv if __FILE__ == $0
+iii FNL.Thomas2015.produce(true).find if __FILE__ == $0
 
