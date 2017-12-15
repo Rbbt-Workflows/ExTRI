@@ -8,7 +8,7 @@ module FNL
   helper :normalize_db do |db|
     new = db.annotate({})
     translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
-
+    
     TSV.traverse db, :into =>  new do |pair,values|
       g1, g2 = pair.split(":")
       gn1, gn2 = translation.values_at g1, g2
@@ -97,7 +97,7 @@ module FNL
     tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
     htri = HTRI.tf_tg.tsv(:merge => true).unzip
-    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).unzip
+    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
     thomas = FNL.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true).unzip
 
     flagged = FNL.TFacts_flagged_articles.list
@@ -143,7 +143,7 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
     tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
     htri = HTRI.tf_tg.tsv(:merge => true).unzip
-    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).unzip
+    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
     thomas = FNL.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     cp = TFCheckpoint.tfs.tsv(:merge => true)
 
@@ -182,7 +182,7 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       [htri, "HTRI"],
       [trrust, "TRRUST"],
       [tfacts, "TFacts"],
-      [encode, "Encode"],
+      #[encode, "Encode"], # Don't use Encode
       [intact, "Intact"],
       [goa, "GOA"],
       [signor, "Signor"],
@@ -195,13 +195,13 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       tsv = attach_db tsv, db, name
 
       db = normalize_db db
+
       db.through do |k, values|
         next if tsv.include? k
         begin
           new_values = k.split(":") + ([""] * (tsv.fields.length - 3 - db.fields.length)) + [name] + values
           tsv[k] = new_values
         rescue
-          iii [k,values]
           raise $!
         end
       end

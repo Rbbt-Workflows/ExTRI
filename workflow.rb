@@ -11,6 +11,7 @@ require 'rbbt/sources/TFCheckpoint'
 require 'rbbt/sources/signor'
 require 'rbbt/sources/GOA'
 require 'rbbt/sources/Intact'
+require 'rbbt/sources/uniprot'
 
 module FNL
   extend Workflow

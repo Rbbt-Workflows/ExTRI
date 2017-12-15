@@ -205,9 +205,12 @@ module FNL
   end
 
   FNL.claim FNL.Thomas2015, :proc do
-    mgi2uni = Organism.identifiers("Mmu/feb2014").index :target => "Associated Gene Name", :persist => true
     uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
+    mgi2uni = Organism.identifiers("Mmu/feb2014").index :target => "Associated Gene Name", :persist => true
     uni2name = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :persist => true
+
+    CaseInsensitiveHash.setup(mgi2uni)
+    CaseInsensitiveHash.setup(uni2name)
 
     thomas = FNL.Nov2017_update.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true, :type => :double)
 

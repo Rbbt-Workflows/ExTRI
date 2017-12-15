@@ -8,7 +8,7 @@ module FNL
     all_pmids = step(:all_pmids).load
     all_fields = tsv.fields
 
-    databases = %w(FNL HTRI TRRUST TFacts Intact)
+    databases = %w(FNL HTRI TRRUST TFacts Intact Signor Thomas2015)
     pmid_database = {}
     tsv.with_monitor do
       tsv.through do |pair, values|
@@ -28,6 +28,9 @@ module FNL
     end
 
     years = Rbbt.data["pmids2year_all.txt"].tsv
+
+    require 'rbbt/sources/pubmed'
+    articles = PubMed.get_article(all_pmids)
 
     dumper = TSV::Dumper.new :key_field => "PMID", :fields => ["Year"] + databases, :type => :double
     dumper.init
