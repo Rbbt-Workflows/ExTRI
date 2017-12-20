@@ -19,6 +19,7 @@ end
 
 require 'rbbt/tasks/FNL/clean'
 require 'rbbt/tasks/FNL/validation'
+#require 'rbbt/tasks/FNL/validation_samples'
 require 'rbbt/tasks/FNL/validation_evaluation'
 require 'rbbt/tasks/FNL/database_coverage'
 require 'rbbt/tasks/FNL/ner'

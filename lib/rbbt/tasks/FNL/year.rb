@@ -1,11 +1,44 @@
 module FNL
 
-  dep :pairs
   dep :all_pmids
+  task :pmid_years => :tsv do
+    all_pmids = step(:all_pmids).load
+    require 'rbbt/sources/pubmed'
+    articles = PubMed.get_article(all_pmids)
+
+    tsv = TSV.setup({}, :key_field => "PMID", :fields => ["Year"], :type => :single)
+    articles.each do |pmid, article|
+      year = article.year
+      tsv[pmid] = year
+    end
+
+    tsv
+  end
+
+  dep :all_pmids
+  task :pmid_journal => :tsv do
+    all_pmids = step(:all_pmids).load
+    require 'rbbt/sources/pubmed'
+    articles = PubMed.get_article(all_pmids)
+
+    tsv = TSV.setup({}, :key_field => "PMID", :fields => ["Journal"], :type => :single)
+    articles.each do |pmid, article|
+      journal = article.journal
+      tsv[pmid] = journal
+    end
+
+    tsv
+  end
+
+
+  dep :pairs
+  dep :pmid_years
+  dep :pmid_journal
   input :high_confidence, :boolean, "Consider only High-confidence", false
   task :pmid_details => :tsv do |high_confidence|
     tsv = step(:pairs).load
-    all_pmids = step(:all_pmids).load
+    pmid_years = step(:pmid_years).load
+    pmid_journal = step(:pmid_journal).load
     all_fields = tsv.fields
 
     databases = %w(FNL HTRI TRRUST TFacts Intact Signor Thomas2015)
@@ -27,12 +60,7 @@ module FNL
       end
     end
 
-    years = Rbbt.data["pmids2year_all.txt"].tsv
-
-    require 'rbbt/sources/pubmed'
-    articles = PubMed.get_article(all_pmids)
-
-    dumper = TSV::Dumper.new :key_field => "PMID", :fields => ["Year"] + databases, :type => :double
+    dumper = TSV::Dumper.new :key_field => "PMID", :fields => ["Year", "Journal"] + databases, :type => :double
     dumper.init
     TSV.traverse pmid_database, :bar => true, :into => dumper do |pmid, entries|
       db_pairs = {}
@@ -43,9 +71,10 @@ module FNL
         db_pairs[database] << pair
       end
       values = db_pairs.values_at(*databases).collect{|v| v.uniq }
-      year = years[pmid] 
+      year = pmid_years[pmid] 
+      journal = pmid_journal[pmid] 
       next if year.nil?
-      [pmid, [year] + values]
+      [pmid, [year, journal] + values]
     end
 
     dumper
@@ -77,8 +106,8 @@ module FNL
     tf_years = TSV::Dumper.new(:key_field => "TF", :fields => ["Years"], :type => :flat)
     tf_years.init
     TSV.traverse pmid_details, :into => tf_years do |pmid, values|
-      year = values.first
-      res = values[1..-1].flatten.collect{|p| p.split(":").first}.uniq.collect{|tf| [tf, year]}
+      year, journal, *rest = values
+      res = rest.flatten.collect{|p| p.split(":").first}.uniq.collect{|tf| [tf, year]}
       res.extend MultipleResult
       res
     end
@@ -99,8 +128,9 @@ module FNL
 
   dep :TF_years
   input :genes, :array, "Genes to consider (empty to consider all)"
+  input :top, :integer, "Show only top genes", 100
   extension :svg
-  task :life_cycle => :binary do |genes|
+  task :life_cycle => :text do |genes,top|
     tsv = step(:TF_years).load
     tsv = tsv.select(genes) if genes and genes.any?
 
@@ -112,16 +142,30 @@ module FNL
     end
 
     require 'rbbt/util/R'
+    log :producing
     R.run  <<-EOF, [:svg]
       library(reshape)
       library(ggplot2)
 
       data = #{R.ruby2R(counts).gsub("),", "),\n")}
+
       m = melt(data)
       names(m) <- c("value", "Year", "Gene")
 
-      g <- ggplot(m, aes(Gene)) + geom_bar(aes(fill=Year, weight=value))
-      rbbt.SVG.save('#{self.path}', g)
+      m = subset(m, m$Year!='y')
+
+
+      gene.counts = aggregate(value ~ Gene, m, sum)
+      rownames(gene.counts) <- gene.counts$Gene
+
+
+      m$Gene = factor(m$Gene, levels = unique(m$Gene[sort(gene.counts[m$Gene,'value'], index.return=T, decreasing=T)$ix]))
+
+      m = subset(m, m$Gene %in% rownames(gene.counts)[1:#{top}])
+
+      g <- ggplot(m, aes(Gene)) + geom_bar(aes(fill=Year, weight=value))  #+ theme(axis.text.x = element_text(angle = 60, hjust=0))
+
+      rbbt.SVG.save(file='#{self.path}', g, width=15, height=5)
     EOF
 
     nil

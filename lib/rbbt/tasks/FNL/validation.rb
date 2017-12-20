@@ -145,8 +145,8 @@ module FNL
       library(randomForest)
       names(data) <- make.names(names(data))
       data$Valid <- as.factor(data$Valid)
-      #m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts + Sentence.pairs + Sentence.pair.density, data=data)
-      m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts, data=data)
+      m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts + Sentence.pairs + Sentence.pair.density, data=data)
+      #m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts, data=data)
       save(m, file='#{file}')
       EOF
 
@@ -169,6 +169,11 @@ module FNL
   dep :FNL_counts, :compute => :produce
   dep :prediction, :compute => :produce
   dep :threshold, :compute => :produce
+  desc <<-EOF
+Takes the FNL_counts file and adds the prediction and threshold confidence. 
+
+Both confidence calls are force to Low if the target gene is a signal transduction element.
+  EOF
   task :FNL_confidence => :tsv  do
     predicted = Set.new step(:prediction).load.keys
     thresholded = Set.new step(:threshold).load.keys
@@ -202,6 +207,9 @@ module FNL
 
   dep :FNL_confidence
   input :confidence, :select, "Confidence criteria", "Predicted", :select_options => ["Predicted", "Threshold"]
+  desc <<-EOF
+Assigns confidence for every FNL triplet (TF:TG:PMID) based on the best confidence call for it (best sentence confidence)
+  EOF
   task :triplet_confidence => :tsv do |confidence|
     tsv = step(:FNL_confidence).load
     confidence_field = confidence == "Predicted" ? "Prediction confidence" : tsv.fields.select{|f| f =~ /Threshold/}.first

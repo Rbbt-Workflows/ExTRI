@@ -111,11 +111,11 @@ module FNL
     tsv = attach_db tsv, htri, "HTRI"
     tsv = attach_db tsv, trrust, "TRRUST"
     tsv = attach_db tsv, tfacts, "TFacts"
-    tsv = attach_db tsv, encode, "Encode"
+    #tsv = attach_db tsv, encode, "Encode"
     tsv = attach_db tsv, goa, "GOA"
     tsv = attach_db tsv, intact, "Intact"
     tsv = attach_db tsv, signor, "Signor"
-    tsv = attach_db tsv, thomas, "Thomas2015"
+    #tsv = attach_db tsv, thomas, "Thomas2015"
 
     tsv
   end
@@ -183,10 +183,10 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       [trrust, "TRRUST"],
       [tfacts, "TFacts"],
       #[encode, "Encode"], # Don't use Encode
-      [intact, "Intact"],
       [goa, "GOA"],
+      [intact, "Intact"],
       [signor, "Signor"],
-      [thomas, "Thomas2015"]
+      #[thomas, "Thomas2015"]
     ].each do |db,name|
       log :adding_db, name
 

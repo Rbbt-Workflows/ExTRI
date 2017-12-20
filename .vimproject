@@ -68,6 +68,11 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
   databases=databases{
    FNL.tar.gz
    FNL=FNL{
+    Nov2017_update=Nov2017_update{
+     GOA.Mmu-Hsa.tsv
+     Intact
+     Thomas2015
+    }
     Encode
     GOA
     Intact

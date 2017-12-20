@@ -92,6 +92,10 @@ module FNL
     sets = []
     cv_times.times.each do 
       sets << keys.shuffle[0..size-1]
+      sets << keys.shuffle[0..size-1]
+      sets << keys.shuffle[0..size-1]
+      sets << keys.shuffle[0..size-1]
+      sets << keys.shuffle[0..size-1]
     end
 
     sets.collect do |set|

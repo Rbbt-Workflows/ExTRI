@@ -20,3 +20,14 @@ M
 * Remove general rules like HDAC, AKT
 
 - Add Signor
+
+- TCheckPoint out
+- Thomas2015 out
+- Encode out
+- Ask Pablo about Intact
+- Wait for Marcio on GOA
+
+- Write about validation
+- Gene lyfe cycle
+- Journals
+- Describe pairs and TFs with statistics
