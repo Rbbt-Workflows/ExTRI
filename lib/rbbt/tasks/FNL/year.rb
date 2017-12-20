@@ -41,7 +41,7 @@ module FNL
     pmid_journal = step(:pmid_journal).load
     all_fields = tsv.fields
 
-    databases = %w(FNL HTRI TRRUST TFacts Intact Signor Thomas2015)
+    databases = %w(FNL HTRI TRRUST TFacts Intact Signor )
     pmid_database = {}
     tsv.with_monitor do
       tsv.through do |pair, values|
@@ -84,19 +84,43 @@ module FNL
   task :database_years => :tsv do
     pmid_details = step(:pmid_details).load
 
-    database_years = TSV::Dumper.new(:key_field => "Database", :fields => ["Years"], :type => :single)
-    databases = pmid_details.fields[1..-1]
-    TSV.traverse pmid_details, :into => database_years do |pmid, values|
-      year = values.first
+    years = pmid_details.column("Year").values.flatten.compact.uniq.sort
+
+    database_years = TSV.setup({}, :key_field => "Database", :fields => years, :type => :double)
+    databases = pmid_details.fields[2..-1]
+    TSV.traverse pmid_details do |pmid, values|
+      year = values["Year"].first
+      next if year.nil?
       res = []
+      year_counts = {}
       databases.zip(values[1..-1]).each do |database, values|
         if values.length > 0
-          res << [database, year]
+          database_years[database] ||= [0] * years.length
+          database_years[database][years.index(year)] += 1
         end
       end
-      res.extend MultipleResult
-      res
     end
+    database_years
+  end
+
+  dep :database_years
+  extension :png
+  task :database_year_plot => :binary do
+    log :producing
+    require 'rbbt/util/R'
+
+    step(:database_years).load.R <<-EOF
+rbbt.require('reshape')
+rbbt.require('plyr')
+rbbt.require('ggplot2')
+
+m <- rbbt.tsv.melt(data, "Year", "Count")
+g <- ggplot(m, aes(x=as.numeric(Year), y=Count, color=Database)) + geom_line() + geom_point()
+
+rbbt.png_plot('#{self.path}', 'g')
+    EOF
+
+    nil
   end
 
   dep :pmid_details

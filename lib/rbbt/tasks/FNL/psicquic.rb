@@ -1,4 +1,3 @@
-Workflow.require_workflow "Appris"
 module FNL
 
   PSI_MITAB_FIELDS =<<-EOF.split("\n").collect{|l| l.strip}

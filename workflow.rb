@@ -13,6 +13,7 @@ require 'rbbt/sources/GOA'
 require 'rbbt/sources/Intact'
 require 'rbbt/sources/uniprot'
 
+Workflow.require_workflow "Appris"
 module FNL
   extend Workflow
 end
@@ -254,8 +255,6 @@ names(data) <- make.names(names(data))
     EOF
 
   end
-
-
 end
 
 #require 'MODULE/tasks/basic.rb'
