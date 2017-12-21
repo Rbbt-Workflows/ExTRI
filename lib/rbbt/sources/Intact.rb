@@ -35,7 +35,6 @@ module Intact
     TSV.traverse Rbbt.share.databases.FNL.Nov2017_update["Intact"], :into => dumper, :type => :line, :bar => true do |line|
       next if line =~ /^#/
       parts = line.split("\t")
-      
 
       tf_ids = parts.values_at(0,2,4).collect{|str| str.split("|")}.flatten
       tf_ids = tf_ids.select{|id| id.split(":").first == "uniprotkb"}.collect{|id| id.split(":").last.split("(").first}.uniq
@@ -49,9 +48,11 @@ module Intact
       tg_ids += uni_equivalences.values_at(*tg_ids).compact.flatten.uniq
       tg_names = gene2name.values_at(*tg_ids).compact.flatten.uniq
 
+      pmid = parts[8].split("|").select{|f| f.include? 'pubmed'}.collect{|f| f.split(":").last} * ";"
+
+      iii [tf_ids, tf_names, tg_ids, tg_names] if pmid.include? "18393360"
       next if tf_names.empty? or tg_names.empty?
 
-      pmid = parts[8].split("|").select{|f| f.include? 'pubmed'}.collect{|f| f.split(":").last} * ";"
       method = parts[6].split("|").select{|f| f.include? 'psi-mi'}.collect{|f| f.scan(/(MI:\d+)/).first} * ";"
 
       [tf_names.first, [tg_names.first, pmid, method]]
