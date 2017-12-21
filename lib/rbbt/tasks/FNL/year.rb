@@ -153,8 +153,9 @@ rbbt.png_plot('#{self.path}', 'g')
   dep :TF_years
   input :genes, :array, "Genes to consider (empty to consider all)"
   input :top, :integer, "Show only top genes", 100
+  input :equal_height, :boolean, "Show bar with equal height", false
   extension :svg
-  task :life_cycle => :text do |genes,top|
+  task :life_cycle => :text do |genes,top,equal_height|
     tsv = step(:TF_years).load
     tsv = tsv.select(genes) if genes and genes.any?
 
@@ -178,16 +179,18 @@ rbbt.png_plot('#{self.path}', 'g')
 
       m = subset(m, m$Year!='y')
 
-
       gene.counts = aggregate(value ~ Gene, m, sum)
       rownames(gene.counts) <- gene.counts$Gene
-
 
       m$Gene = factor(m$Gene, levels = unique(m$Gene[sort(gene.counts[m$Gene,'value'], index.return=T, decreasing=T)$ix]))
 
       m = subset(m, m$Gene %in% rownames(gene.counts)[1:#{top}])
 
-      g <- ggplot(m, aes(Gene)) + geom_bar(aes(fill=Year, weight=value))  #+ theme(axis.text.x = element_text(angle = 60, hjust=0))
+      g <- ggplot(m, aes(x=Gene, fill=Year, weight=value)) 
+
+      #{equal_height ?  "g <- g + geom_bar(position='fill')": "g <- g + geom_bar()" }
+      
+      g <- g + theme_gdocs() + theme(axis.text.x = element_text(angle = 60, hjust=1)) 
 
       rbbt.SVG.save(file='#{self.path}', g, width=15, height=5)
     EOF
