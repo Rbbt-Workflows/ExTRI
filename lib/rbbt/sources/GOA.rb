@@ -71,7 +71,7 @@ module GO
         tf_name = uni2name.values_at(*tf_unis).compact.first
 
         tg_names = []
-        relations_str.split(",").select do |rel|
+        relations_str.split(/[,|]/).select do |rel|
           type, gene_str = rel.split("(")
           next unless %w(has_direct_input has_input has_regulation_target regulates_transcription_of).include? type
           code = gene_str.partition(":").last[0..-2]
