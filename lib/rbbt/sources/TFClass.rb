@@ -3,9 +3,9 @@ require 'rbbt/resource'
 require 'rbbt/sources/organism'
 require 'rbbt/sources/PRO'
 
-module TFCLass
+module TFClass
   extend Resource
-  self.subdir = 'share/databases/TFCLass'
+  self.subdir = 'share/databases/TFClass'
 
   #def self.organism(org="Hsa")
   #  Organism.default_code(org)
@@ -15,11 +15,11 @@ module TFCLass
   #self.search_paths[:default] = :lib
 
 
-  #TFCLass.claim TFCLass.tf_tg, :proc do 
+  #TFClass.claim TFClass.tf_tg, :proc do 
   #  url="http://tfclass.bioinf.med.uni-goettingen.de/suplementary/TFClass_ontologies.zip"
   #end
   
-  TFCLass.claim TFCLass.tfs, :proc do 
+  TFClass.claim TFClass.tfs, :proc do 
     uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
     uni2name = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :persist => true
     gene2uniHsa = Organism.identifiers(Intact.organism("Hsa")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
@@ -43,6 +43,6 @@ end
 if __FILE__ == $0
   require 'rbbt/workflow'
   Workflow.require_workflow "FNL"
-  iif TFCLass.tfs.produce(true).find 
+  iif TFClass.tfs.produce(true).find 
 end
 

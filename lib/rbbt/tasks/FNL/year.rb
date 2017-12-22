@@ -156,7 +156,7 @@ rbbt.png_plot('#{self.path}', 'g')
   input :equal_height, :boolean, "Show bar with equal height", false
   input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
   extension :svg
-  task :life_cycle => :text do |genes,top,equal_height|
+  task :life_cycle => :text do |genes,top,equal_height,remove_autoregulation|
     tsv = step(:TF_years).load
     tsv = tsv.select(genes) if genes and genes.any?
 

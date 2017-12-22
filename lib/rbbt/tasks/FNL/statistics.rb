@@ -102,7 +102,7 @@ module FNL
   input :type, :select, "Aggregate by TF, TG, or pair", "TF", :select_options => %w(TF TG TF:TG)
   input :by_triplet, :boolean, "Consider confidence by triplet in FNL", true
   input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
-  task :articles => :tsv do |db,type, by_triplet|
+  task :articles => :tsv do |db,type, by_triplet,remove_autoregulation|
     tsv = step(:pairs).load
 
     tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation

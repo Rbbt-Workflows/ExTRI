@@ -1,3 +1,4 @@
+require 'rbbt/sources/TFClass'
 module FNL
   AP1_SYN=%w(FOS FOSB JUN JUNB JUND)
   NFKB_SYN=%w(NFKB1 NFKB2 RELA RELB)
@@ -239,11 +240,25 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
 
     tsv.attach cp
 
+    tfclass = TFClass.tfs.list
+    tsv.add_field "TFClass" do |pair,values|
+      tf = pair.split(":").first
+      (tfclass.include? tf) ? "TFClass" : ""
+    end
+
     tsv.add_field "Auto-regulation" do |pair,values|
       (values[0] == values[1]) ? "Auto-regulation" : ""
     end
 
     tsv
+  end
+
+  task :tfcheckpoint_tf_class => :tsv do
+    tfclass = TFClass.tfs.list
+    tsv = TFCheckpoint.tfs.tsv(:merge => true)
+    tsv.add_field "TFClass new" do |tf,values|
+      (tfclass.include? tf) ? "TFClass new" : ""
+    end
   end
 
 
