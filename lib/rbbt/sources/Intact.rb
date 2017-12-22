@@ -50,8 +50,13 @@ module Intact
 
       pmid = parts[8].split("|").select{|f| f.include? 'pubmed'}.collect{|f| f.split(":").last} * ";"
 
-      iii [tf_ids, tf_names, tg_ids, tg_names] if pmid.include? "18393360"
       next if tf_names.empty? or tg_names.empty?
+
+      type_a, type_b = parts.values_at 20, 21
+
+      if type_a.include?('gene') && type_b.include?('protein')
+        tf_names, tg_names = tg_names, tf_names
+      end
 
       method = parts[6].split("|").select{|f| f.include? 'psi-mi'}.collect{|f| f.scan(/(MI:\d+)/).first} * ";"
 
