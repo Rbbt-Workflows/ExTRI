@@ -13,9 +13,12 @@ module FNL
   input :databases, :array, "Databases to compare", ["FNL", "TRRUST", "HTRI", "TFacts", "Intact"]
   input :confidence_db, :boolean, "Filter DB entries for high confidence", false
   input :confidence_FNL, :boolean, "Filter FNL entries for high confidence", false
+  input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
   extension :png
-  task :venn => :binary do |tf_pair,databases,confidence_db,confidence_FNL|
+  task :venn => :binary do |tf_pair,databases,confidence_db,confidence_FNL,remove_autoregulation|
     tsv = step(:pairs).load
+
+    tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
 
     if confidence_db
       good_confidence_fields = tsv.fields.select{|f| f =~ /conf/i}.select{|f| databases.select{|db| f.include? db}.any?}
@@ -98,8 +101,11 @@ module FNL
   input :db, :select, "Database to consider for PMID counts", "FNL", :select_options => FNL::DATABASES
   input :type, :select, "Aggregate by TF, TG, or pair", "TF", :select_options => %w(TF TG TF:TG)
   input :by_triplet, :boolean, "Consider confidence by triplet in FNL", true
+  input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
   task :articles => :tsv do |db,type, by_triplet|
     tsv = step(:pairs).load
+
+    tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
 
     triplet_confidence = step(:triplet_confidence).load
 

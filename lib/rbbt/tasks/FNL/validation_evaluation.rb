@@ -35,6 +35,33 @@ module FNL
   #  res["percent"] = 100 * res["Valid"] / (res["Valid"] + res["Not Valid"])
   #  res
   #end
+  
+  dep :aug_validation_dataset
+  task :auto_regulation_valid => :tsv do
+    vali = step(:aug_validation_dataset).load
+
+    auto =  []
+    vali.each do |k,values|
+      if (k.split(":").length != k.split(":").uniq.length) 
+        auto << k
+      end
+    end
+
+    valid = vali.select("Valid" => "Valid").keys
+    novalid = vali.keys - valid
+
+    iii auto
+    
+    tsv = TSV.setup({}, :key_field => "Type", :fields => ["Counts"], :type => :single)
+    all = vali.keys
+
+    tsv["all"] = all.length
+    tsv["valid"] = valid.length
+    tsv["novalid"] = novalid.length
+    tsv["auto"] = auto.length
+    tsv["novalid auto"] = (novalid & auto).length
+    tsv
+  end
 
   dep :aug_validation_dataset
   dep :FNL_confidence

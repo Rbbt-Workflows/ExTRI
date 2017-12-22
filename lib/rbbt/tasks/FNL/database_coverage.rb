@@ -239,6 +239,10 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
 
     tsv.attach cp
 
+    tsv.add_field "Auto-regulation" do |pair,values|
+      (values[0] == values[1]) ? "Auto-regulation" : ""
+    end
+
     tsv
   end
 
