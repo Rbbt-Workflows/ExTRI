@@ -173,12 +173,23 @@ module FNL
   dep :articles
   task :top => :tsv do
     tsv = step(:articles).load
+    type = step(:articles).inputs[:type]
     new = tsv.annotate({})
     new.type = :list
     new.cast = :to_i
     tsv.through do |e,counts|
       new[e] = counts.collect{|l| l.length}
     end
+
+    new.add_field "TF" do |k,v|
+      k.split(":").first
+    end if type == "TF:TG"
+     
+
+    new.add_field "TG" do |k,v|
+      k.split(":").last
+    end if type == "TF:TG"
+
     new
   end
 

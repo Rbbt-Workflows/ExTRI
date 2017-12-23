@@ -37,6 +37,14 @@ module TFClass
         all_names << names.first unless names.empty?
       end
     end
+
+    TSV.traverse Rbbt.share.databases.FNL.Nov2017_update["TFClass"]["tfclasscode2genesymbol_dic.txt"], :type => :array do |line|
+        genus, code = line.split(":")
+        name = code.gsub('"','').gsub(',','')
+        next unless uni2name.include? name
+        all_names << name
+    end
+
     all_names.to_a.sort * "\n" + "\n"
   end
 end

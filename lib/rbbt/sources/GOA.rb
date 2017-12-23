@@ -81,6 +81,7 @@ module GO
           tg_names << names.first
         end
 
+
         sign = nil if sign == "NA"
         next if tf_name.nil?
         tg_names.compact.each do |tg_name|
