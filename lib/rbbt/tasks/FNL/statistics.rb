@@ -176,7 +176,6 @@ module FNL
     type = step(:articles).inputs[:type]
     new = tsv.annotate({})
     new.type = :list
-    new.cast = :to_i
     tsv.through do |e,counts|
       new[e] = counts.collect{|l| l.length}
     end
