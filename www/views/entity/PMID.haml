@@ -1,0 +1,44 @@
+- entity_card = EntityCard.new(entity)
+
+- if entity.respond_to? :name
+  - entity_card.name = entity
+  - entity_card.long_name = entity.name || name
+- else
+  - entity_card.name = entity
+  - entity_card.long_name = entity.base_type
+
+- entity_card.meta do
+  -#%dl
+    %dt Organism
+    %dd= entity.organism
+
+-# entity_card.description = entity.description 
+
+- entity_card.action_controller = default_action_controller entity
+
+:sass
+  span.sentence
+    font-weight: bold
+
+= entity_card_render entity_card do
+  - a = PubMed.get_article(entity)
+  - fnl = FNL.job(:sentence_coverage_NER).run
+  - sentences = fnl.select{|k,v| k.split(":").include? entity}
+  - sent_text = sentences.collect{|k,v| v["Sentence"]}
+  - pairs = sentences.collect{|k,v| [v["Transcription Factor (Associated Gene Name)"], v["Target Gene (Associated Gene Name)"]] *":"}
+
+  %dl
+    %dt Title
+    %dd= a.title
+
+    %dt Abstract
+    %dd
+      - abs = a.abstract
+      - sent_text.zip(pairs).each do |txt,pair|
+        - abs.sub!(txt, "<span class='sentence' title='#{pair}'>" << txt << "</span>")
+      = abs
+
+    %dt FNL Sentences
+    %dd
+      = table do 
+        - sentences

@@ -1,0 +1,22 @@
+- action_card = ActionCard.new do 
+  - input :gene, :string, "Filter only articles with FNL sentences describing this gene (leave empty to skip)", ""
+  - input :only_FNL_pmid, :boolean, "List only articles that are not covered by DBs other than FNL", true
+  - input :only_FNL_pair, :boolean, "List only pairs that are not covered by DBs other than FNL", true
+
+- action_card.require :gene, :only_FNL_pmid, :only_FNL_pair
+
+= action_card_render action_card do
+  - pairs = FNL.job(:pairs).run
+  - db_present = pairs.fields.select{|f| f.include?('present') && ! f.include?("FNL")}
+  - exclusive = Set.new(pairs.select{|k,v| v["[FNL] present"] == "FNL"; v.values_at(*db_present).flatten.compact.uniq == [""] }.keys.uniq)
+
+  - pmid_details = FNL.job(:pmid_details, nil, :high_confidence => true).run
+  - pmid_details = pmid_details.select("FNL"){|v| not v.empty? }
+  - pmid_details = pmid_details.select{|k,v| genes = v["FNL"].collect{|v| v.split(":")}.flatten; genes.include? gene } if gene and not gene.empty? 
+  - pmid_details = pmid_details.select{|k,v| v[2..-1].flatten.compact == v["FNL"]} if only_FNL_pmid
+  - pmid_details = pmid_details.select{|k,v| (exclusive & v["FNL"]).any?} if only_FNL_pair
+
+  = table do
+    - pmid_details
+
+

@@ -5,7 +5,7 @@ module FNL
   task :all_pmids => :array do
     tsv = step(:pairs).load
     pmid_fields = tsv.fields.select{|f| f=~ /PMID/}
-    tsv.slice(pmid_fields).values.flatten.compact.uniq.collect{|v| v.split(/[;|]/)}.flatten.uniq.select{|v| v =~ /^\d{5,9}$/ }
+    tsv.slice(pmid_fields).values.flatten.compact.uniq.collect{|v| v.split(/[;|]/)}.flatten.uniq.select{|v| v =~ /^\d{5,9}$/ }.collect{|pmid| pmid.sub(/^0+/,'')}
   end
 
   dep :pairs
