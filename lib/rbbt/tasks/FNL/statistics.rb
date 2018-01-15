@@ -57,6 +57,7 @@ module FNL
 
     Open.write(file('present'), present.to_s)
 
+    log :producing
     require 'rbbt/util/R'
     present.R <<-EOF
     data = apply(data,2,function(x){ x != ""})
