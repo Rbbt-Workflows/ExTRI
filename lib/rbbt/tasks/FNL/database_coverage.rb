@@ -145,8 +145,8 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
     htri = HTRI.tf_tg.tsv(:merge => true).unzip
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
-    thomas = FNL.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
-    cp = TFCheckpoint.tfs.tsv(:merge => true)
+    #thomas = FNL.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
+    #cp = TFCheckpoint.tfs.tsv(:merge => true)
 
     flagged = FNL.TFacts_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
@@ -216,29 +216,29 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       key.split(":").last
     end
 
-    cp.add_field "present" do
-      "TFCheckpoint"
-    end
+    #cp.add_field "present" do
+    #  "TFCheckpoint"
+    #end
 
-    cp.fields = cp.fields.collect{|f| "[TFCheckpoint] " << f}
-    cp.key_field = "TF"
-    
-    new_cp = cp.annotate({})
+    #cp.fields = cp.fields.collect{|f| "[TFCheckpoint] " << f}
+    #cp.key_field = "TF"
+    #
+    #new_cp = cp.annotate({})
 
-    translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
-    TSV.traverse cp, :into => new_cp do |tf, values|
-      new_tf = translation[tf] 
-      if new_tf.nil?
-        Log.error "Gene name not found from TFCheckpoint: " + tf
-        new_tf = tf
-      end
-      Log.info "TFCheckpoint Translation " << [tf, new_tf] * " => " if tf != new_tf
-      [new_tf, values]
-    end
+    #translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    #TSV.traverse cp, :into => new_cp do |tf, values|
+    #  new_tf = translation[tf] 
+    #  if new_tf.nil?
+    #    Log.error "Gene name not found from TFCheckpoint: " + tf
+    #    new_tf = tf
+    #  end
+    #  Log.info "TFCheckpoint Translation " << [tf, new_tf] * " => " if tf != new_tf
+    #  [new_tf, values]
+    #end
 
-    cp = new_cp
+    #cp = new_cp
 
-    tsv.attach cp
+    #tsv.attach cp
 
     tfclass = TFClass.tfs.list
     tsv.add_field "TFClass" do |pair,values|
