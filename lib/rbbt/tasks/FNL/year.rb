@@ -4,9 +4,12 @@ module FNL
   task :pmid_years => :tsv do
     all_pmids = step(:all_pmids).load
     require 'rbbt/sources/pubmed'
+
+    log :loading_PMIDs
     articles = PubMed.get_article(all_pmids)
 
     tsv = TSV.setup({}, :key_field => "PMID", :fields => ["Year"], :type => :single)
+    log :processing_years
     articles.each do |pmid, article|
       year = article.year
       tsv[pmid] = year
