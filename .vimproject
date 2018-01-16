@@ -87,7 +87,9 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
 
  www=www {
   views=views{
-   main.haml
+   main=main{
+    curation.haml
+   }
    FNL=FNL{
     venn=venn{
      job_result.haml
@@ -95,6 +97,9 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
     top=top{
      job_result.haml
     }
+   }
+   entity=entity{
+    PMID.haml
    }
   }
  }

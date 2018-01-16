@@ -158,12 +158,14 @@ rbbt.png_plot('#{self.path}', 'g')
   input :top, :integer, "Show only top genes", 100
   input :equal_height, :boolean, "Show bar with equal height", false
   input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
+  input :remove_non_TFClass, :boolean, "Filter out FNL entries for non TFClass TF", false
   extension :svg
-  task :life_cycle => :text do |genes,top,equal_height,remove_autoregulation|
+  task :life_cycle => :text do |genes,top,equal_height,remove_autoregulation,remove_non_TFClass|
     tsv = step(:TF_years).load
     tsv = tsv.select(genes) if genes and genes.any?
 
     tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
+    tsv = tsv.select("TFClass"){|v| ! v.empty?} if remove_non_TFClass
 
     counts = {}
 

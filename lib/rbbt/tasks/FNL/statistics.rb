@@ -14,11 +14,13 @@ module FNL
   input :confidence_db, :boolean, "Filter DB entries for high confidence", false
   input :confidence_FNL, :boolean, "Filter FNL entries for high confidence", false
   input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
+  input :remove_non_TFClass, :boolean, "Filter out FNL entries for non TFClass TF", false
   extension :png
-  task :venn => :binary do |tf_pair,databases,confidence_db,confidence_FNL,remove_autoregulation|
+  task :venn => :binary do |tf_pair,databases,confidence_db,confidence_FNL,remove_autoregulation,remove_non_TFClass|
     tsv = step(:pairs).load
 
     tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
+    tsv = tsv.select("TFClass"){|v| ! v.empty?} if remove_non_TFClass
 
     if confidence_db
       good_confidence_fields = tsv.fields.select{|f| f =~ /conf/i}.select{|f| databases.select{|db| f.include? db}.any?}
@@ -103,10 +105,12 @@ module FNL
   input :type, :select, "Aggregate by TF, TG, or pair", "TF", :select_options => %w(TF TG TF:TG)
   input :by_triplet, :boolean, "Consider confidence by triplet in FNL", true
   input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
-  task :articles => :tsv do |db,type, by_triplet,remove_autoregulation|
+  input :remove_non_TFClass, :boolean, "Filter out FNL entries for non TFClass TF", false
+  task :articles => :tsv do |db,type, by_triplet,remove_autoregulation,remove_non_TFClass|
     tsv = step(:pairs).load
 
     tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
+    tsv = tsv.select("TFClass"){|v| ! v.empty?} if remove_non_TFClass
 
     triplet_confidence = step(:triplet_confidence).load
 

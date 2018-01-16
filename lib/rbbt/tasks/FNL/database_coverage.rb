@@ -127,7 +127,6 @@ List all TF:TG pairs across FNL and other resources along with confidence estima
 
 The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or a score over 1.6.
 
-
   EOF
   dep :FNL_confidence, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
   task :pairs => :tsv do
