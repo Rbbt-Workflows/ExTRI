@@ -240,6 +240,8 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
     #tsv.attach cp
 
     tfclass = TFClass.tfs.list
+    tfclass << "AP1"
+    tfclass << "NFKB"
     tsv.add_field "TFClass" do |pair,values|
       tf = pair.split(":").first
       (tfclass.include? tf) ? "TFClass" : ""

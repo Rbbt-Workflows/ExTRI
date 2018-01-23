@@ -54,9 +54,7 @@ module FNL
     dependencies.first.load
   end
 
-  dep :flagged_tfs
   task :FNL_clean  => :tsv do
-    flagged_tfs = step(:flagged_tfs).load
     p = TSV::Parser.new FNL.TF_full.find
 
     dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence"], :type => :list, :namespace => FNL.organism
@@ -64,7 +62,6 @@ module FNL
     tf_pos = 0
     TSV.traverse FNL.TF_full.find, :type => :list, :into => dumper do |k,v|
       v = v.values_at 0,1,2,3
-      next if flagged_tfs.include? v[tf_pos]
       key = [k, v[0], v[1]] * ":"
       [key,v]
     end
