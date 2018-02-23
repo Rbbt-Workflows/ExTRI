@@ -1,13 +1,16 @@
 module FNL
-  dep :sentence_coverage_NER
+  #dep :sentence_coverage_NER
+  dep :pairs
   task :biogateway => :tsv do
-    tsv = step(:sentence_coverage_NER).load
+    #tsv = step(:sentence_coverage_NER).load
+    tsv = step(:pairs).load
 
     log :prepare, "Preparing tsv for biogateway translation"
     tsv = tsv.to_double
 
     log :fixing, "Fixing complexes and families"
-    tsv.process "Transcription Factor (Associated Gene Name)" do |name|
+    #tsv.process "Transcription Factor (Associated Gene Name)" do |name|
+    tsv.process "TF" do |name|
       name = name.first
       case name
       when "AP1"
@@ -19,7 +22,8 @@ module FNL
       end 
     end
 
-    tsv.process "Target Gene (Associated Gene Name)" do |name|
+    #tsv.process "Target Gene (Associated Gene Name)" do |name|
+    tsv.process "TG" do |name|
       name = name.first
       case name
       when "AP1"
@@ -33,11 +37,13 @@ module FNL
 
 
     log :translating, "Translating TF"
-    tsv = tsv.swap_id "Transcription Factor (Associated Gene Name)", "UniProt/SwissProt Accession"
+    #tsv = tsv.swap_id "Transcription Factor (Associated Gene Name)", "UniProt/SwissProt Accession"
+    tsv = tsv.swap_id "TF", "UniProt/SwissProt Accession"
     tsv.rename_field "UniProt/SwissProt Accession", "Transcription Factor (UniProt/SwissProt Accession)"
 
     log :translating, "Translating TG"
-    tsv = tsv.swap_id "Target Gene (Associated Gene Name)", "Entrez Gene ID"
+    #tsv = tsv.swap_id "Target Gene (Associated Gene Name)", "Entrez Gene ID"
+    tsv = tsv.swap_id "TG", "Entrez Gene ID"
     tsv.rename_field "Entrez Gene ID", "Target Gene (Entrez Gene ID)"
 
     tsv

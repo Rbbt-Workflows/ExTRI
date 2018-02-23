@@ -57,11 +57,25 @@ module FNL
   task :FNL_clean  => :tsv do
     p = TSV::Parser.new FNL.TF_full.find
 
+    translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
     dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence"], :type => :list, :namespace => FNL.organism
     dumper.init
     tf_pos = 0
     TSV.traverse FNL.TF_full.find, :type => :list, :into => dumper do |k,v|
       v = v.values_at 0,1,2,3
+
+      if ! %w(AP1 NFKB).include?(v[0])
+        tf = translation[v[0]] || v[0]
+        Log.low "Translate #{v[0]} => #{ tf }" if v[0] != tf
+        v[0] = tf 
+      end
+
+      if ! %w(AP1 NFKB).include?(v[1])
+        tg = translation[v[1]] || v[1]
+        Log.low "Translate #{v[1]} => #{ tg }" if v[1] != tg
+        v[1] = tg 
+      end
+
       key = [k, v[0], v[1]] * ":"
       [key,v]
     end
