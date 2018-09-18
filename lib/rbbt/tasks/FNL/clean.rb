@@ -164,7 +164,7 @@ module FNL
   end
 
   dep :FNL_postprocess
-  input :skip_post_process, :boolean, "Skip post_processing", false
+  input :skip_post_process, :boolean, "Count entities including sentences removed by post_processing", false
   task :FNL_counts => :tsv do |skip_post_process|
 
     pmid_counts = TSV.setup({}, :key_field => 'Pair', :fields => ["Counts"], :type => :single)
