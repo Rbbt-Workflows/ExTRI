@@ -1,4 +1,4 @@
-module FNL
+module ExTRI
 
 
   #{{{ Threshold
@@ -6,9 +6,9 @@ module FNL
   input :score, :float, "Score threshold", 1.6
   input :pmids, :integer, "Min number of PMIDS", 1000
   input :sentences, :integer, "Min number of sentences", 2
-  dep :FNL_counts, :compute => :produce
+  dep :ExTRI_counts, :compute => :produce
   task :threshold => :tsv do |score, pmids, sentences|
-    tsv = step(:FNL_counts).load
+    tsv = step(:ExTRI_counts).load
     selected = []
     selected.concat tsv.select("Interaction score"){|s| s.to_f >= score }.keys
     selected.concat tsv.select("PMID counts"){|s| s.to_f >= pmids }.keys
@@ -92,7 +92,7 @@ module FNL
   task :aug_validation_dataset => :tsv do |only_consensus|
     validation_dataset = step(:validation_dataset).load
     validation_consensus = Rbbt.data["Astrid Validation"]["Consensus_280717_extended_data_v3.xlsx - consensus.tsv"].tsv :type => :list
-    validation_HC = Rbbt.data["Astrid Validation"]["validation_384_high-confidence_FNL_July_2017.xlsx - validation_July_2017.tsv"].tsv :type => :list
+    validation_HC = Rbbt.data["Astrid Validation"]["validation_384_high-confidence_ExTRI_July_2017.xlsx - validation_July_2017.tsv"].tsv :type => :list
 
     validation = TSV.setup({}, :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Valid"], :type => :single)
 
@@ -116,16 +116,16 @@ module FNL
   #{{{ Prediction model
 
   dep :aug_validation_dataset
-  dep :FNL_counts
-  dep :FNL_postprocess
+  dep :ExTRI_counts
+  dep :ExTRI_postprocess
   input :post_process, :boolean, "Filter training sentences by postprocessing rules", false
   input :test_set, :array, "Separate entries for testing", []
   task :prediction => :tsv do |post_process,test_set|
-    full = step(:FNL_counts).load
+    full = step(:ExTRI_counts).load
     validation = step(:aug_validation_dataset).load
 
     if post_process
-      post = step(:FNL_postprocess).load
+      post = step(:ExTRI_postprocess).load
       validation = validation.select(validation.keys & post.keys)
     end
 
@@ -166,20 +166,20 @@ module FNL
 
   #{{{ Add confidence to dataset
   
-  dep :FNL_counts, :compute => :produce
+  dep :ExTRI_counts, :compute => :produce
   dep :prediction, :compute => :produce
   dep :threshold, :compute => :produce
   desc <<-EOF
-Takes the FNL_counts file and adds the prediction and threshold confidence. 
+Takes the ExTRI_counts file and adds the prediction and threshold confidence. 
 
 Both confidence calls are force to Low if the target gene is a signal transduction element.
   EOF
-  task :FNL_confidence => :tsv  do
+  task :ExTRI_confidence => :tsv  do
     predicted = Set.new step(:prediction).load.keys
     thresholded = Set.new step(:threshold).load.keys
     signal_transd = Rbbt.data["signal_transd.list"].list
 
-    tsv = step(:FNL_counts).load
+    tsv = step(:ExTRI_counts).load
     tsv.with_monitor do
     tsv.add_field "Prediction confidence" do |k,v|
       tg = v["Target Gene (Associated Gene Name)"]
@@ -205,13 +205,13 @@ Both confidence calls are force to Low if the target gene is a signal transducti
     tsv
   end
 
-  dep :FNL_confidence
+  dep :ExTRI_confidence
   input :confidence, :select, "Confidence criteria", "Predicted", :select_options => ["Predicted", "Threshold"]
   desc <<-EOF
-Assigns confidence for every FNL triplet (TF:TG:PMID) based on the best confidence call for it (best sentence confidence)
+Assigns confidence for every ExTRI triplet (TF:TG:PMID) based on the best confidence call for it (best sentence confidence)
   EOF
   task :triplet_confidence => :tsv do |confidence|
-    tsv = step(:FNL_confidence).load
+    tsv = step(:ExTRI_confidence).load
     confidence_field = confidence == "Predicted" ? "Prediction confidence" : tsv.fields.select{|f| f =~ /Threshold/}.first
 
     res =  TSV.setup({}, :key_field => "TF:TG:PMID", :fields => [confidence_field], :type => :single)
@@ -265,7 +265,7 @@ Assigns confidence for every FNL triplet (TF:TG:PMID) based on the best confiden
   #  o = options.dup
   #  pmids.collect do |pmid|
   #    o[:pmids] = pmid
-  #    FNL.job(:threshold_pairs, jobname, o)
+  #    ExTRI.job(:threshold_pairs, jobname, o)
   #  end
   #end
   #task :pair_analysis => :tsv do

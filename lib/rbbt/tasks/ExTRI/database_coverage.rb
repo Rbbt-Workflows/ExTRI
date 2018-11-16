@@ -1,14 +1,14 @@
 require 'rbbt/sources/TFClass'
-module FNL
+module ExTRI
   AP1_SYN=%w(FOS FOSB JUN JUNB JUND)
   NFKB_SYN=%w(NFKB1 NFKB2 RELA RELB)
 
 
-  DATABASES=%w(FNL HTRI TFacts TRRUST Intact Encode)
+  DATABASES=%w(ExTRI HTRI TFacts TRRUST Intact Encode)
 
   helper :normalize_db do |db|
     new = db.annotate({})
-    translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
     
     TSV.traverse db, :into =>  new do |pair,values|
       g1, g2 = pair.split(":")
@@ -83,31 +83,31 @@ module FNL
     end
   end
 
-  dep :FNL_confidence, :test_set => []
+  dep :ExTRI_confidence, :test_set => []
   task :sentence_coverage => :tsv do
-    id_file = Organism.identifiers(FNL.organism)
+    id_file = Organism.identifiers(ExTRI.organism)
 
-    encode = FNL.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
 
-    #goa = FNL.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    #goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
     goa = GO.tf_tg.tsv(:merge => true).unzip
 
-    #intact = FNL.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    #intact = ExTRI.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
     intact = Intact.tf_tg.tsv(:merge => true).unzip
 
     tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
     htri = HTRI.tf_tg.tsv(:merge => true).unzip
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
-    thomas = FNL.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true).unzip
+    thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true).unzip
 
-    flagged = FNL.TFacts_flagged_articles.list
+    flagged = ExTRI.TFacts_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
       sign,species,source,pmids = values
       (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
     end
   
-    tsv = step(:FNL_confidence).load
+    tsv = step(:ExTRI_confidence).load
 
     tsv = attach_db tsv, htri, "HTRI"
     tsv = attach_db tsv, trrust, "TRRUST"
@@ -123,39 +123,39 @@ module FNL
 
   desc <<-EOF 
 
-List all TF:TG pairs across FNL and other resources along with confidence estimates and other information from those resources.
+List all TF:TG pairs across ExTRI and other resources along with confidence estimates and other information from those resources.
 
-The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or a score over 1.6.
+The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences or a score over 1.6.
 
   EOF
-  dep :FNL_confidence, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
+  dep :ExTRI_confidence, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
   task :pairs => :tsv do
-    id_file = Organism.identifiers(FNL.organism)
+    id_file = Organism.identifiers(ExTRI.organism)
 
-    encode = FNL.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
 
-    #goa = FNL.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    #goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
     goa = GO.tf_tg.tsv(:merge => true).unzip
 
-    #intact = FNL.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    #intact = ExTRI.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
     intact = Intact.tf_tg.tsv(:merge => true).unzip
 
     tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
     htri = HTRI.tf_tg.tsv(:merge => true).unzip
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
-    #thomas = FNL.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
+    #thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
 
-    flagged = FNL.TFacts_flagged_articles.list
+    flagged = ExTRI.TFacts_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
       sign,species,source,pmids = values
       (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
     end
 
-    orig = step(:FNL_confidence).load
+    orig = step(:ExTRI_confidence).load
 
-    tsv = TSV.setup({}, :key_field => "TF:TG", :fields => ["TF", "TG", "[FNL] Confidence", "[FNL] PMID"], :type => :list, :namespace => FNL.organism)
+    tsv = TSV.setup({}, :key_field => "TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "[ExTRI] Confidence", "[ExTRI] PMID"], :type => :list, :namespace => ExTRI.organism)
 
     confidence = orig.fields.select{|f| f.include? "Thresh"}.first
     pmids = {}
@@ -174,8 +174,8 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       tsv[pair*":"] = [pair[0], pair[1], conf[pair] ? "High" : "Low", pmids * ";"]
     end
 
-    tsv.add_field "[FNL] present" do
-      "FNL"
+    tsv.add_field "[ExTRI] present" do
+      "ExTRI"
     end
 
     [
@@ -207,11 +207,11 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       end
     end
 
-    tsv.process "TF" do |list,key,values|
+    tsv.process "Transcription Factor (Associated Gene Name)" do |list,key,values|
       key.split(":").first
     end
 
-    tsv.process "TG" do |list,key,values|
+    tsv.process "Target Gene (Associated Gene Name)" do |list,key,values|
       key.split(":").last
     end
 
@@ -224,7 +224,7 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
     #
     #new_cp = cp.annotate({})
 
-    #translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    #translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
     #TSV.traverse cp, :into => new_cp do |tf, values|
     #  new_tf = translation[tf] 
     #  if new_tf.nil?

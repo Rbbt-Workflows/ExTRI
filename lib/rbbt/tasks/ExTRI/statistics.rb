@@ -1,4 +1,4 @@
-module FNL
+module ExTRI
 
 
   dep :pairs
@@ -10,13 +10,13 @@ module FNL
 
   dep :pairs
   input :tf_pair, :select, "Use TF or TF-TG pairs", "TF", :select_options => ["TF", "TF-TG"]
-  input :databases, :array, "Databases to compare", ["FNL", "TRRUST", "HTRI", "TFacts", "Intact"]
+  input :databases, :array, "Databases to compare", ["ExTRI", "TRRUST", "HTRI", "TFacts", "Intact"]
   input :confidence_db, :boolean, "Filter DB entries for high confidence", false
-  input :confidence_FNL, :boolean, "Filter FNL entries for high confidence", false
-  input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
-  input :remove_non_TFClass, :boolean, "Filter out FNL entries for non TFClass TF", false
+  input :confidence_ExTRI, :boolean, "Filter ExTRI entries for high confidence", false
+  input :remove_autoregulation, :boolean, "Filter out ExTRI entries for auto-regulation", false
+  input :remove_non_TFClass, :boolean, "Filter out ExTRI entries for non TFClass TF", false
   extension :png
-  task :venn => :binary do |tf_pair,databases,confidence_db,confidence_FNL,remove_autoregulation,remove_non_TFClass|
+  task :venn => :binary do |tf_pair,databases,confidence_db,confidence_ExTRI,remove_autoregulation,remove_non_TFClass|
     tsv = step(:pairs).load
 
     tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
@@ -26,16 +26,16 @@ module FNL
       good_confidence_fields = tsv.fields.select{|f| f =~ /conf/i}.select{|f| databases.select{|db| f.include? db}.any?}
       good_confidence_fields.each do |f|
         name = f.match(/\[(.*)\]/)[1]
-        next if name == "FNL"
+        next if name == "ExTRI"
         tsv.select(f){|v| v =~ /Low/i}.keys.each do |k|
           tsv[k]["[#{ name }] present"] = ""
         end
       end
     end
 
-    if confidence_FNL
-      tsv.select("[FNL] Confidence" => "Low").keys.each do |k|
-        tsv[k]["[FNL] present"] = ""
+    if confidence_ExTRI
+      tsv.select("[ExTRI] Confidence" => "Low").keys.each do |k|
+        tsv[k]["[ExTRI] present"] = ""
       end
     end
 
@@ -72,15 +72,15 @@ module FNL
     nil
   end
 
-  #dep :FNL_confidence
+  #dep :ExTRI_confidence
   #input :confidence, :select, "Confidence criteria", "Predicted", :select_options => ["Predicted", "Threshold"]
   #task :top_pairs => :tsv do |confidence|
-  #  tsv = step(:FNL_confidence).load
+  #  tsv = step(:ExTRI_confidence).load
 
   #  confidence_field = confidence == "Predicted" ? "Prediction confidence" : tsv.fields.select{|f| f =~ /Threshold/}.first
-  #  all = TSV.setup({}, :key_field => "TF:TF", :fields => ["FNL all sentences"], :type => :single, :cast => :to_i)
-  #  high = TSV.setup({}, :key_field => "TF:TF", :fields => ["FNL High conf. sentences"], :type => :single, :cast => :to_i)
-  #  low = TSV.setup({}, :key_field => "TF:TF", :fields => ["FNL Low conf. sentences"], :type => :single, :cast => :to_i)
+  #  all = TSV.setup({}, :key_field => "TF:TF", :fields => ["ExTRI all sentences"], :type => :single, :cast => :to_i)
+  #  high = TSV.setup({}, :key_field => "TF:TF", :fields => ["ExTRI High conf. sentences"], :type => :single, :cast => :to_i)
+  #  low = TSV.setup({}, :key_field => "TF:TF", :fields => ["ExTRI Low conf. sentences"], :type => :single, :cast => :to_i)
   #  tsv.through do |key, values|
   #    pair = key.split(":").values_at -2, -1
   #    pair = pair * ":"
@@ -101,11 +101,11 @@ module FNL
   
   dep :pairs
   dep :triplet_confidence
-  input :db, :select, "Database to consider for PMID counts", "FNL", :select_options => FNL::DATABASES
+  input :db, :select, "Database to consider for PMID counts", "ExTRI", :select_options => ExTRI::DATABASES
   input :type, :select, "Aggregate by TF, TG, or pair", "TF", :select_options => %w(TF TG TF:TG)
-  input :by_triplet, :boolean, "Consider confidence by triplet in FNL", true
-  input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
-  input :remove_non_TFClass, :boolean, "Filter out FNL entries for non TFClass TF", false
+  input :by_triplet, :boolean, "Consider confidence by triplet in ExTRI", true
+  input :remove_autoregulation, :boolean, "Filter out ExTRI entries for auto-regulation", false
+  input :remove_non_TFClass, :boolean, "Filter out ExTRI entries for non TFClass TF", false
   task :articles => :tsv do |db,type, by_triplet,remove_autoregulation,remove_non_TFClass|
     tsv = step(:pairs).load
 
@@ -142,7 +142,7 @@ module FNL
 
       counts[key][0].concat pmids
 
-      if db == "FNL" and by_triplet
+      if db == "ExTRI" and by_triplet
         pmids_h = []
         pmids_l = []
         pmids.each do |p|
@@ -199,10 +199,10 @@ module FNL
 
   export :venn, :top
 
-  dep :FNL_clean
+  dep :ExTRI_clean
   task :gene_sentence_counts => :tsv do
-    counts = TSV.setup({}, :key_field => "Associated Gene Name", :fields => ["Sentences as TF", "Sentences as TG"], :type => :list, :namespace => FNL.organism)
-    TSV.traverse step(:FNL_clean), :bar => self.progress_bar("Counting genes") do |id,values|
+    counts = TSV.setup({}, :key_field => "Associated Gene Name", :fields => ["Sentences as TF", "Sentences as TG"], :type => :list, :namespace => ExTRI.organism)
+    TSV.traverse step(:ExTRI_clean), :bar => self.progress_bar("Counting genes") do |id,values|
       tf, tg, *rest = values
       counts[tf] ||= [0,0]
       counts[tg] ||= [0,0]
@@ -210,7 +210,7 @@ module FNL
       counts[tg] = [counts[tg][0], counts[tg][1] + 1]
     end
 
-    tsv = step(:FNL_clean).load
+    tsv = step(:ExTRI_clean).load
     tsv.monitor = true
 
     word_counts = {}
@@ -237,10 +237,10 @@ module FNL
     counts
   end
 
-  dep :FNL_clean
+  dep :ExTRI_clean
   input :gene, :string, "Gene name"
   task :words => :tsv do |gene|
-    tsv = step(:FNL_clean).load
+    tsv = step(:ExTRI_clean).load
     counts = {} 
     tsv.with_monitor do
       tsv.through do |k,v|

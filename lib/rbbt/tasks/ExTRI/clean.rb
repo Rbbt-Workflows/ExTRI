@@ -1,4 +1,4 @@
-module FNL
+module ExTRI
 
   input :salvage, :boolean, "Salvage some non-TFClass TFs", false
   task :flagged_tfs_TFCheckpoint => :array do |salvage|
@@ -7,7 +7,7 @@ module FNL
 
     new_cp = cp.annotate({})
 
-    translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
     TSV.traverse cp, :into => new_cp do |tf, values|
       new_tf = translation[tf] 
       if new_tf.nil?
@@ -31,7 +31,7 @@ module FNL
       good_tfs = tf_class
     end
 
-    fnl_fs = Open.open(FNL.TF_full) do |io| Misc.fixutf8(CMD.cmd("cut -f 2 | sort -u", :in => io).read).split("\n") end
+    fnl_fs = Open.open(ExTRI.TF_full) do |io| Misc.fixutf8(CMD.cmd("cut -f 2 | sort -u", :in => io).read).split("\n") end
     fnl_fs - good_tfs - ["NFKB", "AP1"]
   end
 
@@ -41,11 +41,11 @@ module FNL
 
     ens = GTRD.tfClass.list
 
-    translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
 
     good_tfs = translation.values_at(*ens).compact
 
-    fnl_fs = Open.open(FNL.TF_full) do |io| Misc.fixutf8(CMD.cmd("cut -f 2 | sort -u", :in => io).read).split("\n") end
+    fnl_fs = Open.open(ExTRI.TF_full) do |io| Misc.fixutf8(CMD.cmd("cut -f 2 | sort -u", :in => io).read).split("\n") end
     fnl_fs - good_tfs - ["NFKB", "AP1"]
   end
 
@@ -54,14 +54,14 @@ module FNL
     dependencies.first.load
   end
 
-  task :FNL_clean  => :tsv do
-    p = TSV::Parser.new FNL.TF_full.find
+  task :ExTRI_clean  => :tsv do
+    p = TSV::Parser.new ExTRI.TF_full.find
 
-    translation = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :order => true, :persist => true
-    dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence"], :type => :list, :namespace => FNL.organism
+    translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence"], :type => :list, :namespace => ExTRI.organism
     dumper.init
     tf_pos = 0
-    TSV.traverse FNL.TF_full.find, :type => :list, :into => dumper do |k,v|
+    TSV.traverse ExTRI.TF_full.find, :type => :list, :into => dumper do |k,v|
       v = v.values_at 0,1,2,3
 
       if ! %w(AP1 NFKB).include?(v[0])
@@ -103,9 +103,9 @@ module FNL
     end
   end
 
-  dep :FNL_clean
-  task :FNL_postprocess => :tsv do
-    tsv = step(:FNL_clean).load
+  dep :ExTRI_clean
+  task :ExTRI_postprocess => :tsv do
+    tsv = step(:ExTRI_clean).load
 
     TSV.traverse Rbbt.root.data["post_process_rules.tsv"].find(:lib), :type => :array do |line|
       next if line =~ /^#/
@@ -163,15 +163,15 @@ module FNL
     tsv
   end
 
-  dep :FNL_postprocess
+  dep :ExTRI_postprocess
   input :skip_post_process, :boolean, "Count entities including sentences removed by post_processing", false
-  task :FNL_counts => :tsv do |skip_post_process|
+  task :ExTRI_counts => :tsv do |skip_post_process|
 
     pmid_counts = TSV.setup({}, :key_field => 'Pair', :fields => ["Counts"], :type => :single)
     sentence_counts = TSV.setup({}, :key_field => 'Triplet', :fields => ["Counts"], :type => :single)
     sentence_pairs = TSV.setup({}, :key_field => 'Sentence', :fields => ["Counts"], :type => :single)
 
-    dep = skip_post_process ? step(:FNL_postprocess).step(:FNL_clean) : step(:FNL_postprocess)
+    dep = skip_post_process ? step(:ExTRI_postprocess).step(:ExTRI_clean) : step(:ExTRI_postprocess)
 
     TSV.traverse dep do |k,values|
       tf, tg = values.values_at(0,1)
@@ -186,7 +186,7 @@ module FNL
       sentence_pairs[sentence] += 1
     end
 
-    dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence", "PMID counts", "Sentence counts", "Sentence pairs", "Sentence length", "Sentence pair density"], :type => :list, :namespace => FNL.organism
+    dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence", "PMID counts", "Sentence counts", "Sentence pairs", "Sentence length", "Sentence pair density"], :type => :list, :namespace => ExTRI.organism
     dumper.init
     TSV.traverse dep, :into => dumper do |k,values|
       tf, tg = values.values_at(0,1)
@@ -200,10 +200,10 @@ module FNL
     end
   end
 
-  #dep :FNL_postprocess
-  #task :FNL_upstream_regulators => :tsv do
+  #dep :ExTRI_postprocess
+  #task :ExTRI_upstream_regulators => :tsv do
   #  upstream = Rbbt.data["hdacs_etc.list"].find(:lib).list
-  #  TSV.traverse step(:FNL_postprocess), :type => :array, :into => :stream do |line|
+  #  TSV.traverse step(:ExTRI_postprocess), :type => :array, :into => :stream do |line|
   #    tg = line.split("\t")[2] 
   #    next unless upstream.include? tg
   #    line
@@ -215,23 +215,23 @@ module FNL
 
   #  flagged_tfs = step(:flagged_tfs).load
 
-  #  id_file = Organism.identifiers(FNL.organism)
+  #  id_file = Organism.identifiers(ExTRI.organism)
 
-  #  encode = FNL.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-  #  goa = FNL.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-  #  intact = FNL.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+  #  encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+  #  goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+  #  intact = ExTRI.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
 
   #  tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
   #  trrust = TRRUST.tf_tg.tsv(:merge => true).unzip
   #  htri = HTRI.tf_tg.tsv(:merge => true).unzip
 
-  #  flagged = FNL.TFacts_flagged_articles.list
+  #  flagged = ExTRI.TFacts_flagged_articles.list
   #  tfacts.add_field "Confidence" do |tf,values|
   #    sign,species,source,pmids = values
   #    (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
   #  end
 
-  #  tsv = FNL.TF.tsv(:merge => true).select("TF Associated Gene Name").unzip(0, true, ":", false).unzip("TF Associated Gene Name", true, ":", false).unzip("TG Associated Gene Name", true, ":", false).to_list
+  #  tsv = ExTRI.TF.tsv(:merge => true).select("TF Associated Gene Name").unzip(0, true, ":", false).unzip("TF Associated Gene Name", true, ":", false).unzip("TG Associated Gene Name", true, ":", false).to_list
 
   #  tsv = attach_db tsv, htri, "HTRI"
   #  tsv = attach_db tsv, trrust, "TRRUST"

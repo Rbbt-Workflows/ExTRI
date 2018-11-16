@@ -4,9 +4,9 @@ require 'rbbt/resource'
 require 'rbbt/sources/organism'
 require 'rbbt/sources/PRO'
 
-module FNL
+module ExTRI
   extend Resource
-  self.subdir = 'share/databases/FNL'
+  self.subdir = 'share/databases/ExTRI'
   self.set_libdir
   self.search_paths.merge!(:default => :lib)
 
@@ -33,13 +33,13 @@ module FNL
   end
 
 
-  FNL.claim FNL.GOA, :proc do 
+  ExTRI.claim ExTRI.GOA, :proc do 
     #url = "ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/UNIPROT/gene_association.goa_ref_uniprot.gz"
     #text = CMD.cmd('grep has_regulation_target | grep "taxon:\(9606\|10090\|10116\)" | grep $\'\t\(EXP\|IDA\|IPI\|IMP\|IGI\|IEP\|TAS\)\t\'', :in => Open.open(url), :pipe => true)
     #taxons = [9606, 10090, 10116]
     #entrez_gene_index = Rbbt.share.databases.entrez.gene_info.index :target => [1], :fields => [5], :grep => /^(#{taxons * "|"})/
 
-    entrez_gene_index = FNL.entrez_gene_index
+    entrez_gene_index = ExTRI.entrez_gene_index
 
     TSV.traverse CMD.cmd('grep "^\(9606\|10090\|10116\)"', :in => Rbbt.share.databases.entrez.gene_info.open, :pipe => true), :type => :array do |line|
       parts = line.split("\t", -1)
@@ -56,7 +56,7 @@ module FNL
 
     mouse_index = Organism.identifiers("Mmu").index(:target => "Entrez Gene ID", :persist => true, :order => true)
     rat_index = Organism.identifiers("Rno").index(:target => "Entrez Gene ID", :persist => true, :order => true)
-    human_index = Organism.identifiers(FNL.organism("Hsa")).index(:target => "Entrez Gene ID", :persist => true, :order => true)
+    human_index = Organism.identifiers(ExTRI.organism("Hsa")).index(:target => "Entrez Gene ID", :persist => true, :order => true)
 
 
     tsv = TSV.setup({}, :key_field => "UniProt/SwissProt Accession", :fields => ["Entrez Gene ID", "GO ID", "Evidence type", "Provider"], :type => :double)
@@ -91,7 +91,7 @@ module FNL
     tsv
   end
 
-  FNL.claim FNL.HTRIDB, :proc do 
+  ExTRI.claim ExTRI.HTRIDB, :proc do 
     file = Rbbt.data['.source']['raw_data_14-08-04.csv']
     tsv = TSV.open(file, :header_hash => '', :sep => ';', :fix => Proc.new{|l| l[0..-1]}, :key_field => "GENEID_TF", :fields => "GENEID_TG;TECHNIQUE;PUBMED_ID".split(";"), :merge => true)
     tsv.key_field = "Entrez Gene ID"
@@ -106,14 +106,14 @@ module FNL
     tsv
   end
 
-  FNL.claim FNL.HTRIDB_HT_methods, :proc do 
-    all = FNL.HTRIDB.tsv.column("Technique").values.flatten.uniq
+  ExTRI.claim ExTRI.HTRIDB_HT_methods, :proc do 
+    all = ExTRI.HTRIDB.tsv.column("Technique").values.flatten.uniq
     small = Rbbt.data['.source']['small_scale_experiments_only.csv'].tsv(:header_hash => '', :sep => ';', :merge => true).column("TECHNIQUE").values.flatten.compact.uniq
 
     (all - small) * "\n"
   end
 
-  FNL.claim FNL.Encode, :proc do 
+  ExTRI.claim ExTRI.Encode, :proc do 
     url = 'http://encodenets.gersteinlab.org/enets2.Proximal_filtered.txt'
     tsv = TSV.open(url, :fields => [2,1], :merge => true, :sep => /\s+/)
     tsv.key_field = "Associated Gene Name"
@@ -143,12 +143,12 @@ module FNL
     tsv
   end
 
-  FNL.claim FNL.Intact, :proc do
+  ExTRI.claim ExTRI.Intact, :proc do
     mouse_index = Organism.identifiers("Mmu").index(:target => "Entrez Gene ID", :persist => true, :order => true)
     rat_index = Organism.identifiers("Rno").index(:target => "Entrez Gene ID", :persist => true, :order => true)
-    human_index = Organism.identifiers(FNL.organism("Hsa")).index(:target => "Entrez Gene ID", :persist => true, :order => true)
+    human_index = Organism.identifiers(ExTRI.organism("Hsa")).index(:target => "Entrez Gene ID", :persist => true, :order => true)
 
-    entrez_gene_index = FNL.entrez_gene_index
+    entrez_gene_index = ExTRI.entrez_gene_index
 
     tsv = TSV.setup({}, :key_field => "UniProt/SwissProt Accession", :fields => ["Entrez Gene ID", "Method ID", "PMID"], :type => :double)
     TSV.traverse Rbbt.data['.source']['mammalian_protein_gene_interactions.intact_14-09-03.txt'], :type => :array, :into => tsv do |line|
@@ -164,12 +164,12 @@ module FNL
     tsv
   end
 
-  FNL.claim FNL.TFACTS, :proc do
+  ExTRI.claim ExTRI.TFACTS, :proc do
     tsv = TSV.setup({}, :key_field => "UniProt/SwissProt Accession", :fields => ["Entrez Gene ID", "Provider", "PMID"], :type => :double)
 
     mouse_index_uni = Organism.identifiers("Mmu").index(:target => "UniProt/SwissProt Accession", :persist => true, :order => true)
     rat_index_uni = Organism.identifiers("Rno").index(:target => "UniProt/SwissProt Accession", :persist => true, :order => true)
-    human_index_uni = Organism.identifiers(FNL.organism("Hsa")).index(:target => "UniProt/SwissProt Accession", :persist => true, :order => true)
+    human_index_uni = Organism.identifiers(ExTRI.organism("Hsa")).index(:target => "UniProt/SwissProt Accession", :persist => true, :order => true)
 
     TSV.traverse Rbbt.data['.source']['TFactS_2012-08-09.trancritption_factor_entrez-target_gene_entrez-provenance-organism-pmid_ref.txt'], :type => :array, :into => tsv do |line|
       next if line =~ /^#/
@@ -185,7 +185,7 @@ module FNL
     tsv
   end
 
-  FNL.claim FNL.TFacts_flagged_articles, :proc do
+  ExTRI.claim ExTRI.TFacts_flagged_articles, :proc do
     threshold = 10
     pmid_counts = {}
     TSV.traverse TFacts.tf_tg do |tf,values|
@@ -204,15 +204,15 @@ module FNL
     flagged * "\n"
   end
 
-  FNL.claim FNL.Thomas2015, :proc do
+  ExTRI.claim ExTRI.Thomas2015, :proc do
     uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
     mgi2uni = Organism.identifiers("Mmu/feb2014").index :target => "Associated Gene Name", :persist => true
-    uni2name = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :persist => true
+    uni2name = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :persist => true
 
     CaseInsensitiveHash.setup(mgi2uni)
     CaseInsensitiveHash.setup(uni2name)
 
-    thomas = FNL.Nov2017_update.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true, :type => :double)
+    thomas = ExTRI.Nov2017_update.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true, :type => :double)
 
     new = thomas.annotate({})
 
@@ -238,5 +238,5 @@ module FNL
 
 end
 
-iii FNL.Thomas2015.produce(true).find if __FILE__ == $0
+iii ExTRI.Thomas2015.produce(true).find if __FILE__ == $0
 

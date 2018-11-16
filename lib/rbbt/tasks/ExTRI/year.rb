@@ -1,4 +1,4 @@
-module FNL
+module ExTRI
 
   dep :all_pmids
   task :pmid_years => :tsv do
@@ -44,7 +44,7 @@ module FNL
     pmid_journal = step(:pmid_journal).load
     all_fields = tsv.fields
 
-    databases = %w(FNL HTRI TRRUST TFacts Intact Signor )
+    databases = %w(ExTRI HTRI TRRUST TFacts Intact Signor )
     pmid_database = {}
     tsv.with_monitor do
       tsv.through do |pair, values|
@@ -157,8 +157,8 @@ rbbt.png_plot('#{self.path}', 'g')
   input :genes, :array, "Genes to consider (empty to consider all)"
   input :top, :integer, "Show only top genes", 100
   input :equal_height, :boolean, "Show bar with equal height", false
-  input :remove_autoregulation, :boolean, "Filter out FNL entries for auto-regulation", false
-  input :remove_non_TFClass, :boolean, "Filter out FNL entries for non TFClass TF", false
+  input :remove_autoregulation, :boolean, "Filter out ExTRI entries for auto-regulation", false
+  input :remove_non_TFClass, :boolean, "Filter out ExTRI entries for non TFClass TF", false
   extension :svg
   task :life_cycle => :text do |genes,top,equal_height,remove_autoregulation,remove_non_TFClass|
     tsv = step(:TF_years).load

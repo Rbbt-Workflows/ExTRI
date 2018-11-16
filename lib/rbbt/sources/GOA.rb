@@ -58,12 +58,12 @@ module GO
     tsv = TSV.setup({}, :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign"], :type => :double, :namespace => FNL.organism)
 
     uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
-    uni2name = Organism.identifiers(FNL.organism).index :target => "Associated Gene Name", :persist => true
+    uni2name = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :persist => true
     gene2uniHsa = Organism.identifiers(Intact.organism("Hsa")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
     gene2uniMmu = Organism.identifiers(Intact.organism("Mmu")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
     gene2uniRno = Organism.identifiers(Intact.organism("Rno")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
 
-    Rbbt.share.databases.FNL.Nov2017_update["GOA.source"].glob("*.tsv").each do |file|
+    Rbbt.share.databases.ExTRI.Nov2017_update["GOA.source"].glob("*.tsv").each do |file|
       TSV.traverse file, :type => :array do |line|
         tf_uni, tf_name, sign, relations_str = line.split("\t")
 
@@ -96,6 +96,6 @@ end
 
 if __FILE__ == $0
   require 'rbbt/workflow'
-  Workflow.require_workflow "FNL"
+  Workflow.require_workflow "ExTRI"
   iii GO.tf_tg.produce(true).find
 end

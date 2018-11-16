@@ -1,14 +1,14 @@
-module FNL
+module ExTRI
 
   dep :sentence_coverage
   task :sentence_coverage_NER => :tsv do
 
-    ner = Rbbt.data.Martin_NER["FNL.sentence_coverage_full_genes.tsv.gz"].tsv :type => :double, :merge => true
+    ner = Rbbt.data.Martin_NER["ExTRI.sentence_coverage_full_genes.tsv.gz"].tsv :type => :double, :merge => true
     ner.key_field = "Sentence ID"
     ner.fields = ["?", "Text", "??", "Entrez Gene ID", "Tax ID", "Confidence"]
     ner = ner.slice(["Text", "Entrez Gene ID", "Tax ID", "Confidence"])
 
-    name2entrez = Organism.identifiers(FNL.organism).index :target => "Entrez Gene ID", :order => true, :persist => true
+    name2entrez = Organism.identifiers(ExTRI.organism).index :target => "Entrez Gene ID", :order => true, :persist => true
     tsv = step(:sentence_coverage).load
 
 

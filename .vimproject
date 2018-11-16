@@ -1,4 +1,4 @@
-FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
+ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
  workflow.rb
  bin=bin{
   add_small_scale_experiment.rb
@@ -10,7 +10,7 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
  lib=lib {
   sinatra.rb
   sources=rbbt/sources{
-   FNL.rb
+   ExTRI.rb
    GOA.rb
    HTRI.rb
    Intact.rb
@@ -19,9 +19,9 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    TRRUST.rb
   }
   knowledge_base=rbbt/knowledge_base{
-   FNL.rb
+   ExTRI.rb
   }
-  tasks=rbbt/tasks/FNL{
+  tasks=rbbt/tasks/ExTRI{
    clean.rb
 
    validation_samples.rb
@@ -40,6 +40,8 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    psicquic.rb
    biogateway.rb
    greco.rb
+
+   tf_tf.rb
   }
  }
  data=data filter="*"{
@@ -66,21 +68,21 @@ FNL=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
  }
  share=share filter="*"{
   databases=databases{
-   FNL.tar.gz
-   FNL=FNL{
+   ExTRI=ExTRI{
+    Encode
+    GOA
+    HTRIDB.gz
+    HTRIDB_HT_methods
+    Intact
+    TF.gz
+    TFACTS
+    TF_full.gz
+    TFacts_flagged_articles
+    Thomas2015
     Nov2017_update=Nov2017_update{
-     GOA.Mmu-Hsa.tsv
      Intact
      Thomas2015
     }
-    Encode
-    GOA
-    Intact
-    Intact.new_query.20172111
-    HTRIDB
-    HTRIDB_HT_methods
-    TF
-    TFACTS
    }
   }
  }

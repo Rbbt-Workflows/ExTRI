@@ -1,4 +1,4 @@
-module FNL
+module ExTRI
 
   dep :sentence_coverage_full_NER
   task :validation_sample => :tsv do

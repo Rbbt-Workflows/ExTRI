@@ -1,12 +1,12 @@
 require 'rbbt/knowledge_base'
 require 'rbbt/sources/organism'
 
-module FNL
+module ExTRI
 
   class << self 
     attr_accessor :knowledge_base_dir
   end
-  self.knowledge_base_dir = Rbbt.var.knowledge_base.FNL
+  self.knowledge_base_dir = Rbbt.var.knowledge_base.ExTRI
 
   def self.organism
     Organism.default_code("Hsa")
@@ -21,4 +21,4 @@ module FNL
   end
 end
 
-FNL.knowledge_base.register :TF, Rbbt.data.TF, :source => "TF Associated Gene Name=~Associated Gene Name", :target => "TG Associated Gene Name=~Associated Gene Name", :fields => ["Sentence", "Sentence score", "Interaction score"]
+ExTRI.knowledge_base.register :TF, Rbbt.data.TF, :source => "TF Associated Gene Name=~Associated Gene Name", :target => "TG Associated Gene Name=~Associated Gene Name", :fields => ["Sentence", "Sentence score", "Interaction score"]

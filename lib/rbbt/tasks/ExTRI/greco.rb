@@ -1,10 +1,10 @@
-module FNL
+module ExTRI
 
   dep :validation_dataset
-  dep :FNL_clean
+  dep :ExTRI_clean
   task :greco_format => :text do 
     tsv = step(:validation_dataset).load.select("Valid" => "Valid")
-    fixed = step(:FNL_clean).load
+    fixed = step(:ExTRI_clean).load
 
     name2ens = Organism.identifiers("Hsa/feb2014").index :persist => true
     hashes = []
@@ -24,7 +24,7 @@ module FNL
       
       hashes << {
         "ext_id": pmid, #pmid
-        "provider": "FNL", 
+        "provider": "ExTRI", 
         "anns": [
           {
             "exact": sentence,

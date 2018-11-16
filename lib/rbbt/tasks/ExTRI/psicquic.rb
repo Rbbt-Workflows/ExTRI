@@ -1,4 +1,4 @@
-module FNL
+module ExTRI
 
   PSI_MITAB_FIELDS =<<-EOF.split("\n").collect{|l| l.strip}
     Unique identifier for interactor A
@@ -47,19 +47,19 @@ module FNL
 
   
   dep :sentence_coverage_NER
-  task :PSI_MITAB_FNL => :tsv do
+  task :PSI_MITAB_ExTRI => :tsv do
     psi_key_field, *psi_fields = PSI_MITAB_FIELDS
 
     dumper = TSV::Dumper.new(:key_field => psi_key_field, :fields => psi_fields, :type => :double)
     dumper.init
 
-    name2ens = Organism.identifiers(FNL.organism).index :target => "Ensembl Gene ID", :order => true, :persist => true
-    name2uni = Organism.identifiers(FNL.organism).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
-    name2ent = Organism.identifiers(FNL.organism).index :target => "Entrez Gene ID", :order => true, :persist => true
-    ens2enst = Organism.transcripts(FNL.organism).tsv :key_field => "Ensembl Gene ID", :fields => ["Ensembl Transcript ID"], :persist => true, :type => :single
-    enst2ensp = Organism.transcripts(FNL.organism).tsv :key_field => "Ensembl Transcript ID", :fields => ["Ensembl Protein ID"], :persist => true, :type => :single
+    name2ens = Organism.identifiers(ExTRI.organism).index :target => "Ensembl Gene ID", :order => true, :persist => true
+    name2uni = Organism.identifiers(ExTRI.organism).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+    name2ent = Organism.identifiers(ExTRI.organism).index :target => "Entrez Gene ID", :order => true, :persist => true
+    ens2enst = Organism.transcripts(ExTRI.organism).tsv :key_field => "Ensembl Gene ID", :fields => ["Ensembl Transcript ID"], :persist => true, :type => :single
+    enst2ensp = Organism.transcripts(ExTRI.organism).tsv :key_field => "Ensembl Transcript ID", :fields => ["Ensembl Protein ID"], :persist => true, :type => :single
     ensg2penst = Appris.principal_isoforms.tsv :fields => ["Ensembl Transcript ID"], :type => :flat, :persist => true
-    ensp2uni = Organism.protein_identifiers(FNL.organism).index :target => "UniProt/SwissProt Accession", :persist => true
+    ensp2uni = Organism.protein_identifiers(ExTRI.organism).index :target => "UniProt/SwissProt Accession", :persist => true
 
     parser = TSV::Parser.new step(:sentence_coverage_NER)
     sent_key_field, *sent_fields = parser.all_fields
@@ -165,16 +165,16 @@ module FNL
   #  dumper = TSV::Dumper.new(:key_field => psi_key_field, :fields => psi_fields, :type => :double)
   #  dumper.init
 
-  #  name2ens = Organism.identifiers(FNL.organism).index :target => "Ensembl Gene ID", :order => true, :persist => true
-  #  name2uni = Organism.identifiers(FNL.organism).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
-  #  name2ent = Organism.identifiers(FNL.organism).index :target => "Entrez Gene ID", :order => true, :persist => true
+  #  name2ens = Organism.identifiers(ExTRI.organism).index :target => "Ensembl Gene ID", :order => true, :persist => true
+  #  name2uni = Organism.identifiers(ExTRI.organism).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+  #  name2ent = Organism.identifiers(ExTRI.organism).index :target => "Entrez Gene ID", :order => true, :persist => true
 
   #  parser = TSV::Parser.new step(:pairs)
   #  pairs_key_field, *pairs_fields = parser.all_fields
   #  TSV.traverse parser, :into => dumper do |pairs_id, pairs_values|
   #    values = {}
 
-  #    id = "FNL:" << pairs_id.gsub(":", "_")
+  #    id = "ExTRI:" << pairs_id.gsub(":", "_")
 
   #    tf_name, tg_name = pairs_id.split(":")
 

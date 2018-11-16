@@ -1,9 +1,9 @@
-module FNL
+module ExTRI
 
   #dep :threshold 
   #dep :aug_validation_dataset
   #task :threshold_evaluation => :yaml do 
-  #  full = step(:threshold).step(:FNL_counts).load
+  #  full = step(:threshold).step(:ExTRI_counts).load
   #  tsv = step(:threshold).load
   #  validation = step(:aug_validation_dataset).load
 
@@ -64,11 +64,11 @@ module FNL
   end
 
   dep :aug_validation_dataset
-  dep :FNL_confidence
+  dep :ExTRI_confidence
   input :test_set, :array, "Separate entries for testing", []
-  task :FNL_confidence_evaluation => :tsv do |test_set|
+  task :ExTRI_confidence_evaluation => :tsv do |test_set|
     vali = step(:aug_validation_dataset).load
-    conf = step(:FNL_confidence).load
+    conf = step(:ExTRI_confidence).load
 
     if test_set && test_set.any?
       vali = vali.select(test_set)
@@ -111,7 +111,7 @@ module FNL
 
   dep :aug_validation_dataset, :compute => :produce
   input :cv_times, :integer, "Number of CV folds", 5
-  dep :FNL_confidence_evaluation, :test_set => :placeholder, :compute => :bootstrap do |jobname,options,dependencies|
+  dep :ExTRI_confidence_evaluation, :test_set => :placeholder, :compute => :bootstrap do |jobname,options,dependencies|
     keys = dependencies.first.run.keys
 
     cv_times = options[:cv_times]
@@ -126,14 +126,14 @@ module FNL
     end
 
     sets.collect do |set|
-      FNL.job(:FNL_confidence_evaluation, jobname, options.merge({:test_set => set}))
+      ExTRI.job(:ExTRI_confidence_evaluation, jobname, options.merge({:test_set => set}))
     end
   end
-  task :FNL_confidence_CV => :tsv do
+  task :ExTRI_confidence_CV => :tsv do
     res = nil
     i = 0
     dependencies.collect do |dep|
-      next unless dep.task_name.to_s == "FNL_confidence_evaluation"
+      next unless dep.task_name.to_s == "ExTRI_confidence_evaluation"
       i += 1
       tsv = dep.load
       tsv.fields = tsv.fields.collect{|f| f + " (#{i})" }
@@ -150,10 +150,10 @@ module FNL
   end
 
   dep :aug_validation_dataset
-  dep :FNL_confidence
-  task :FNL_threshold_evaluation => :tsv do 
+  dep :ExTRI_confidence
+  task :ExTRI_threshold_evaluation => :tsv do 
     vali = step(:aug_validation_dataset).load
-    conf = step(:FNL_confidence).load
+    conf = step(:ExTRI_confidence).load
 
     valid = vali.select("Valid" => "Valid").keys
     novalid = vali.keys - valid
@@ -190,13 +190,13 @@ module FNL
     
   end
 
-  dep :FNL_confidence, :only_consensus => :placeholder do |jobname, options|
+  dep :ExTRI_confidence, :only_consensus => :placeholder do |jobname, options|
     jobs = []
-    jobs << FNL.job(:FNL_confidence, jobname, options.merge(:only_consensus => true))
-    jobs << FNL.job(:FNL_confidence, jobname, options.merge(:only_consensus => false))
+    jobs << ExTRI.job(:ExTRI_confidence, jobname, options.merge(:only_consensus => true))
+    jobs << ExTRI.job(:ExTRI_confidence, jobname, options.merge(:only_consensus => false))
     jobs
   end
-  task :FNL_confidence_differences => :tsv do
+  task :ExTRI_confidence_differences => :tsv do
     only = dependencies.first.load
     all = dependencies.last.load
 

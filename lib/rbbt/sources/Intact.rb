@@ -31,8 +31,8 @@ module Intact
 
     dumper = TSV::Dumper.new :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "PMID", "Method ID"], :type => :double, :namespace => Intact.organism
     dumper.init
-    fields = TSV.parse_header(Rbbt.share.databases.FNL.Nov2017_update["Intact"]).fields
-    TSV.traverse Rbbt.share.databases.FNL.Nov2017_update["Intact"], :into => dumper, :type => :line, :bar => true do |line|
+    fields = TSV.parse_header(Rbbt.share.databases.ExTRI.Nov2017_update["Intact"]).fields
+    TSV.traverse Rbbt.share.databases.ExTRI.Nov2017_update["Intact"], :into => dumper, :type => :line, :bar => true do |line|
       next if line =~ /^#/
       parts = line.split("\t")
 
@@ -69,7 +69,7 @@ end
 
 if __FILE__ == $0
   require 'rbbt/workflow'
-  Workflow.require_workflow "FNL"
+  Workflow.require_workflow "ExTRI"
   iif Intact.tf_tg.produce(true).find
 end
 

@@ -1,4 +1,4 @@
-module FNL
+module ExTRI
 
   dep :pairs
   input :tfs, :array, "TFs to consider"

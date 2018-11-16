@@ -1,4 +1,4 @@
-module FNL
+module ExTRI
   #dep :sentence_coverage_NER
   dep :pairs
   task :biogateway => :tsv do
@@ -65,7 +65,7 @@ RefSeq mRNA
 RefSeq Protein ID
 EOF
      
-    organism = FNL.organism
+    organism = ExTRI.organism
 
     ids.each do |id|
       log :add_id, id

@@ -3,7 +3,7 @@ require 'rbbt/workflow'
 
 Misc.add_libdir if __FILE__ == $0
 
-require 'rbbt/sources/FNL'
+require 'rbbt/sources/ExTRI'
 require 'rbbt/sources/HTRI'
 require 'rbbt/sources/TRRUST'
 require 'rbbt/sources/tfacts'
@@ -14,29 +14,30 @@ require 'rbbt/sources/Intact'
 require 'rbbt/sources/uniprot'
 
 Workflow.require_workflow "Appris"
-module FNL
+module ExTRI
   extend Workflow
 end
 
-require 'rbbt/tasks/FNL/clean'
-require 'rbbt/tasks/FNL/validation'
-#require 'rbbt/tasks/FNL/validation_samples'
-require 'rbbt/tasks/FNL/validation_evaluation'
-require 'rbbt/tasks/FNL/database_coverage'
-require 'rbbt/tasks/FNL/ner'
-require 'rbbt/tasks/FNL/statistics'
-require 'rbbt/tasks/FNL/year'
-require 'rbbt/tasks/FNL/psicquic'
-require 'rbbt/tasks/FNL/biogateway'
-require 'rbbt/tasks/FNL/regulon'
-require 'rbbt/tasks/FNL/greco'
+require 'rbbt/tasks/ExTRI/clean'
+require 'rbbt/tasks/ExTRI/validation'
+#require 'rbbt/tasks/ExTRI/validation_samples'
+require 'rbbt/tasks/ExTRI/validation_evaluation'
+require 'rbbt/tasks/ExTRI/database_coverage'
+require 'rbbt/tasks/ExTRI/ner'
+require 'rbbt/tasks/ExTRI/statistics'
+require 'rbbt/tasks/ExTRI/year'
+require 'rbbt/tasks/ExTRI/psicquic'
+require 'rbbt/tasks/ExTRI/biogateway'
+require 'rbbt/tasks/ExTRI/regulon'
+require 'rbbt/tasks/ExTRI/greco'
+require 'rbbt/tasks/ExTRI/tf_tf'
 
 if __FILE__ == $0
   require 'rbbt/util/R'
   ENV["DISPLAY"] = "localhost:12.0"
 
   Log.severity = 0
-  tsv = FNL.job(:sentence_coverage).run
+  tsv = ExTRI.job(:sentence_coverage).run
   present_fields = tsv.fields.select{|f| f =~ /present/}.reject{|f| f =~ /Encode/ }
   raise "STOP"
 
@@ -57,7 +58,7 @@ if __FILE__ == $0
 
     EOF
   when 1.1
-    tsv = FNL.job(:sentence_coverage).run
+    tsv = ExTRI.job(:sentence_coverage).run
     scores = tsv.column("Sentence score").to_list
     scores.fields = ["score"]
 
@@ -72,7 +73,7 @@ if __FILE__ == $0
 
     EOF
   when 1.2
-    tsv = FNL.job(:sentence_coverage).run
+    tsv = ExTRI.job(:sentence_coverage).run
     scores = tsv.slice(["Sentence score", "Interaction score"])
     Log.tsv scores
     scores.fields = ["score_sent", "score_int"]
@@ -156,7 +157,7 @@ if __FILE__ == $0
     EOF
   when 4
 
-    tsv = FNL.job(:all).run
+    tsv = ExTRI.job(:all).run
     good_present_fields = tsv.fields.select{|f| f =~ /present/}.reject{|f| f =~ /Encode|GOA|TFChe/ }
     pair_present = tsv.slice(good_present_fields)
 
@@ -172,7 +173,7 @@ if __FILE__ == $0
     EOF
   when 5
 
-    tsv = FNL.job(:all).path.tsv :key_field => "TF", :merge => true, :zipped => true
+    tsv = ExTRI.job(:all).path.tsv :key_field => "TF", :merge => true, :zipped => true
     good_present_fields = tsv.fields.select{|f| f =~ /present/}.reject{|f| f =~ /Encode|GOA|TFChe/ }
     tf_present = tsv.slice(good_present_fields).to_list{|v| v.compact.uniq.first}
 
@@ -191,7 +192,7 @@ if __FILE__ == $0
     validation = Rbbt.data["Astrid Validation"]["validation_samples_260317.tsv"].tsv :type => :list
     validation = validation.attach tsv, :fields => ["Interaction score"]
 
-    all = FNL.job(:all).run
+    all = ExTRI.job(:all).run
     good_present_fields = all.fields.select{|f| f =~ /present/}.reject{|f| f =~ /Encode|GOA|TFChe/ }
     pair_present = all.slice(good_present_fields)
     pair_present.fields = pair_present.fields.collect{|f| name = f.match(/\[(.*)\]/)[1]; "pair #{name}"}
@@ -201,7 +202,7 @@ if __FILE__ == $0
     end
     validation.attach pair_present
 
-    all_tf = FNL.job(:all).path.tsv :key_field => "TF", :merge => true, :zipped => true
+    all_tf = ExTRI.job(:all).path.tsv :key_field => "TF", :merge => true, :zipped => true
     good_present_fields = all_tf.fields.select{|f| f =~ /present/}.reject{|f| f =~ /Encode|GOA|TFChe/ }
     tf_present = all_tf.slice(good_present_fields).to_list{|v| v.compact.uniq.first}
     tf_present.fields = tf_present.fields.collect{|f| name = f.match(/\[(.*)\]/)[1]; "TF #{name}"}
@@ -243,7 +244,7 @@ if __FILE__ == $0
     validation.attach pmid_present.to_list
     validation.attach sentence_counts.to_list
 
-    sent = FNL.job(:sentence_coverage).run
+    sent = ExTRI.job(:sentence_coverage).run
     validation.attach sent, :fields => "Sentence score"
 
     Open.write('/tmp/sentence_validation.tsv', validation.to_s)
@@ -259,6 +260,6 @@ end
 
 #require 'MODULE/tasks/basic.rb'
 
-#require 'rbbt/knowledge_base/FNL'
+#require 'rbbt/knowledge_base/ExTRI'
 #require 'rbbt/entity/MODULE'
 
