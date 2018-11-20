@@ -18,6 +18,7 @@ module ExTRI
   extend Workflow
 end
 
+<<<<<<< HEAD
 require 'rbbt/tasks/ExTRI/clean'
 require 'rbbt/tasks/ExTRI/validation'
 #require 'rbbt/tasks/ExTRI/validation_samples'
@@ -31,6 +32,21 @@ require 'rbbt/tasks/ExTRI/biogateway'
 require 'rbbt/tasks/ExTRI/regulon'
 require 'rbbt/tasks/ExTRI/greco'
 require 'rbbt/tasks/ExTRI/tf_tf'
+=======
+require 'rbbt/tasks/FNL/clean'
+require 'rbbt/tasks/FNL/validation'
+#require 'rbbt/tasks/FNL/validation_samples'
+require 'rbbt/tasks/FNL/validation_evaluation'
+require 'rbbt/tasks/FNL/database_coverage'
+require 'rbbt/tasks/FNL/ner'
+require 'rbbt/tasks/FNL/statistics'
+require 'rbbt/tasks/FNL/year'
+require 'rbbt/tasks/FNL/psicquic'
+require 'rbbt/tasks/FNL/biogateway'
+require 'rbbt/tasks/FNL/regulon'
+require 'rbbt/tasks/FNL/greco'
+require 'rbbt/tasks/FNL/tf_tf'
+>>>>>>> 150eee3fd0d3af214a176fa89951c556a8ed3b34
 
 if __FILE__ == $0
   require 'rbbt/util/R'
