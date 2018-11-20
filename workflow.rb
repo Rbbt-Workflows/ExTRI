@@ -30,6 +30,7 @@ require 'rbbt/tasks/FNL/psicquic'
 require 'rbbt/tasks/FNL/biogateway'
 require 'rbbt/tasks/FNL/regulon'
 require 'rbbt/tasks/FNL/greco'
+require 'rbbt/tasks/FNL/tf_tf'
 
 if __FILE__ == $0
   require 'rbbt/util/R'

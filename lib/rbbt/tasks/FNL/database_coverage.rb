@@ -155,7 +155,7 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
 
     orig = step(:FNL_confidence).load
 
-    tsv = TSV.setup({}, :key_field => "TF:TG", :fields => ["TF", "TG", "[FNL] Confidence", "[FNL] PMID"], :type => :list, :namespace => FNL.organism)
+    tsv = TSV.setup({}, :key_field => "TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "[FNL] Confidence", "[FNL] PMID"], :type => :list, :namespace => FNL.organism)
 
     confidence = orig.fields.select{|f| f.include? "Thresh"}.first
     pmids = {}
@@ -207,11 +207,11 @@ The confidence estimate for FNL pairs uses by default 2 PMIDs or 2 sentences or 
       end
     end
 
-    tsv.process "TF" do |list,key,values|
+    tsv.process "Transcription Factor (Associated Gene Name)" do |list,key,values|
       key.split(":").first
     end
 
-    tsv.process "TG" do |list,key,values|
+    tsv.process "Target Gene (Associated Gene Name)" do |list,key,values|
       key.split(":").last
     end
 
