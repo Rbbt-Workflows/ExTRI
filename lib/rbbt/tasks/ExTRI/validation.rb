@@ -142,7 +142,7 @@ module ExTRI
     data = nil
     TmpFile.with_file do |file|
       train.R <<-EOF
-      library(randomForest)
+      rbbt.require('randomForest')
       names(data) <- make.names(names(data))
       data$Valid <- as.factor(data$Valid)
       m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts + Sentence.pairs + Sentence.pair.density, data=data)
@@ -151,7 +151,7 @@ module ExTRI
       EOF
 
       data = full.R <<-EOF
-      library(randomForest)
+      rbbt.require('randomForest')
       names(data) <- make.names(names(data))
       load('#{file}')
       predictions = predict(m, data)
