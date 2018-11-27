@@ -331,7 +331,7 @@ module ExTRI
 
   dep :db_counts, :confidence => false, :compute => :produce
   dep :db_counts, :confidence => true, :compute => :produce
-  task :db_counts_all => :tsv do
+  task :db_counts_conf => :tsv do
     tf_pair = recursive_inputs[:tf_pair]
     tsv = dependencies.first.load
     tsv_conf = dependencies.last.load
@@ -344,6 +344,16 @@ module ExTRI
       counts[db][1] = "#{c} (#{u})"
     end
     counts
+  end
+
+  dep :db_counts_conf, :tf_pair => "TF"
+  dep :db_counts_conf, :tf_pair => "TG"
+  dep :db_counts_conf, :tf_pair => "TF-TG"
+  task :db_counts_conf_all => :tsv do
+    tsv = dependencies.first.load
+    tsv.attach dependencies[1]
+    tsv.attach dependencies.last
+    tsv
   end
 
 end
