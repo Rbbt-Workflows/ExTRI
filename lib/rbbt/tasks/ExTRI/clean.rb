@@ -71,6 +71,7 @@ module ExTRI
       end
 
       if ! %w(AP1 NFKB).include?(v[1])
+
         tg = translation[v[1]] || v[1]
         Log.low "Translate #{v[1]} => #{ tg }" if v[1] != tg
         v[1] = tg 

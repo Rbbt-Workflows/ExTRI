@@ -1,5 +1,18 @@
-- header "All", "NumericValue"
-- header "High", "NumericValue"
-- header "Low", "NumericValue"
-= table do
-  - job.load
+-result = job.load
+- if result.any?
+  - table_id = [workflow.to_s, task, jobname] * "_"
+  - table_class = 'workflow_tsv_result'
+  - begin
+    - page = result.size > 50 ? "1" : nil
+  - rescue
+    - page = "1"
+
+  - rows, total_size = tsv_rows(result, page)
+  - header = result.all_fields
+
+  = workflow_partial('partials/table', workflow, task,
+    locals.merge(:table_id => table_id, :page => page, :table_class => table_class, :rows => rows, :total_size => total_size, :header => result.all_fields, :row_ids => :use, :table_url => jobname ? to(File.join('/', workflow.to_s, task, jobname)) : nil))
+
+- else
+
+  Empty result
