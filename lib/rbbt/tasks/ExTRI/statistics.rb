@@ -261,15 +261,14 @@ module ExTRI
   input :confidence, :boolean, "Filter DB entries for high confidence", false
   input :remove_autoregulation, :boolean, "Filter out ExTRI entries for auto-regulation", false
   input :remove_non_TFClass, :boolean, "Filter out ExTRI entries for non TFClass TF", false
-  extension :png
-  task :db_counts => :tsv do |tf_pair,databases,confidence,remove_autoregulation,remove_non_TFClass|
+  task :db_counts => :tsv do |tf_pair,confidence,remove_autoregulation,remove_non_TFClass|
     tsv = step(:pairs).load
 
     tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
     tsv = tsv.select("TFClass"){|v| ! v.empty?} if remove_non_TFClass
 
     if confidence
-      good_confidence_fields = tsv.fields.select{|f| f =~ /conf/i}.select{|f| databases.select{|db| f.include? db}.any?}
+      good_confidence_fields = tsv.fields.select{|f| f =~ /conf/i}
       good_confidence_fields.each do |f|
         name = f.match(/\[(.*)\]/)[1]
         next if name == "ExTRI"
@@ -285,11 +284,11 @@ module ExTRI
       end
     end
 
-    good_present_fields = tsv.fields.select{|f| f =~ /present/}.select{|f| databases.select{|db| f.include? db}.any?}
+    good_present_fields = tsv.fields.select{|f| f =~ /present/}
 
     present = nil
     case tf_pair
-    when tf_pair == "TF"
+    when "TF"
       tsv.with_monitor self.progress_bar("Reordering by TF") do
         present = TSV.setup({}, :key_field => tsv.key_field, :fields => good_present_fields, :type => :list)
         tsv.slice(good_present_fields).through do |k,values|
@@ -299,7 +298,7 @@ module ExTRI
           present[k] =  new
         end
       end
-    when tf_pair == "TG"
+    when "TG"
       tsv.with_monitor self.progress_bar("Reordering by TG") do
         present = TSV.setup({}, :key_field => tsv.key_field, :fields => good_present_fields, :type => :list)
         tsv.slice(good_present_fields).through do |k,values|
@@ -313,7 +312,38 @@ module ExTRI
       present = tsv.slice(good_present_fields)
     end
 
-    present
+    counts = TSV.setup({}, :key_field => "Database", :fields => ["All #{tf_pair}", "Unique #{tf_pair}"], :type => :list, :cast => :to_i)
+    present.through do |pair, dbs|
+      unique = dbs.compact.reject{|e| e.empty?}.length == 1
+      dbs.to_hash.each do |db,present|
+        db = db.sub('[','').sub(']','').split(" ").first
+        counts[db] ||=[]
+        next if present.nil? or present.empty?
+        counts[db][0] ||=0
+        counts[db][0] += 1
+        next unless unique
+        counts[db][1] ||=0
+        counts[db][1] += 1
+      end
+    end
+    counts
+  end
+
+  dep :db_counts, :confidence => false, :compute => :produce
+  dep :db_counts, :confidence => true, :compute => :produce
+  task :db_counts_all => :tsv do
+    tf_pair = recursive_inputs[:tf_pair]
+    tsv = dependencies.first.load
+    tsv_conf = dependencies.last.load
+    counts = TSV.setup({}, :key_field => "Database", :fields => ["All #{tf_pair} (unique)", "High confidence #{tf_pair} (unique)"], :type => :list)
+    tsv.each do |db,v|
+      c,u = v
+      counts[db] ||= []
+      counts[db][0] = "#{c} (#{u})"
+      c,u = tsv_conf[db]
+      counts[db][1] = "#{c} (#{u})"
+    end
+    counts
   end
 
 end
