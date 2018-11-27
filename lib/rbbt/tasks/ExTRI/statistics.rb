@@ -256,5 +256,64 @@ module ExTRI
     TSV.setup(counts, :key_field => "Word", :fields => ["Counts"], :type => :single, :cast => :to_i)
   end
 
+  dep :pairs
+  input :tf_pair, :select, "Use TF, TG, or TF-TG pairs", "TF", :select_options => ["TF", "TG", "TF-TG"]
+  input :confidence, :boolean, "Filter DB entries for high confidence", false
+  input :remove_autoregulation, :boolean, "Filter out ExTRI entries for auto-regulation", false
+  input :remove_non_TFClass, :boolean, "Filter out ExTRI entries for non TFClass TF", false
+  extension :png
+  task :db_counts => :tsv do |tf_pair,databases,confidence,remove_autoregulation,remove_non_TFClass|
+    tsv = step(:pairs).load
+
+    tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
+    tsv = tsv.select("TFClass"){|v| ! v.empty?} if remove_non_TFClass
+
+    if confidence
+      good_confidence_fields = tsv.fields.select{|f| f =~ /conf/i}.select{|f| databases.select{|db| f.include? db}.any?}
+      good_confidence_fields.each do |f|
+        name = f.match(/\[(.*)\]/)[1]
+        next if name == "ExTRI"
+        tsv.select(f){|v| v =~ /Low/i}.keys.each do |k|
+          tsv[k]["[#{ name }] present"] = ""
+        end
+      end
+    end
+
+    if confidence
+      tsv.select("[ExTRI] Confidence" => "Low").keys.each do |k|
+        tsv[k]["[ExTRI] present"] = ""
+      end
+    end
+
+    good_present_fields = tsv.fields.select{|f| f =~ /present/}.select{|f| databases.select{|db| f.include? db}.any?}
+
+    present = nil
+    case tf_pair
+    when tf_pair == "TF"
+      tsv.with_monitor self.progress_bar("Reordering by TF") do
+        present = TSV.setup({}, :key_field => tsv.key_field, :fields => good_present_fields, :type => :list)
+        tsv.slice(good_present_fields).through do |k,values|
+          k = k.split(":").first
+          current = present[k] || values
+          new = current.zip(values).collect{|c,n| [c,n].reject{|v| v.nil? or v.empty?}.first }
+          present[k] =  new
+        end
+      end
+    when tf_pair == "TG"
+      tsv.with_monitor self.progress_bar("Reordering by TG") do
+        present = TSV.setup({}, :key_field => tsv.key_field, :fields => good_present_fields, :type => :list)
+        tsv.slice(good_present_fields).through do |k,values|
+          k = k.split(":").last
+          current = present[k] || values
+          new = current.zip(values).collect{|c,n| [c,n].reject{|v| v.nil? or v.empty?}.first }
+          present[k] =  new
+        end
+      end
+    else
+      present = tsv.slice(good_present_fields)
+    end
+
+    present
+  end
 
 end
