@@ -342,14 +342,12 @@ module ExTRI
       counts[db + " (unique)"] ||= []
 
       counts[db][0] = c
-      counts[db + " (unique)"][0] = u
+      counts[db + " (unique)"][0] = u || 0
 
       c,u = tsv_conf[db]
       counts[db][1] = c
-      counts[db + " (unique)"][1] = u
+      counts[db + " (unique)"][1] = u || 0
     end
-    iii counts
-    Log.tsv counts
     counts
   end
 
