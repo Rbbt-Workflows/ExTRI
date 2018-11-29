@@ -335,13 +335,18 @@ module ExTRI
     tf_pair = recursive_inputs[:tf_pair]
     tsv = dependencies.first.load
     tsv_conf = dependencies.last.load
-    counts = TSV.setup({}, :key_field => "Database", :fields => ["All #{tf_pair} (unique)", "High confidence #{tf_pair} (unique)"], :type => :list)
+    counts = TSV.setup({}, :key_field => "Database", :fields => ["All #{tf_pair}", "High confidence #{tf_pair}"], :type => :list)
     tsv.each do |db,v|
       c,u = v
       counts[db] ||= []
-      counts[db][0] = "#{c} (#{u})"
+      counts[db + " (unique)"] ||= []
+
+      counts[db][0] = c
+      counts[db + " (unique)"][0] = u || 0
+
       c,u = tsv_conf[db]
-      counts[db][1] = "#{c} (#{u})"
+      counts[db][1] = c
+      counts[db + " (unique)"][1] = u || 0
     end
     counts
   end
