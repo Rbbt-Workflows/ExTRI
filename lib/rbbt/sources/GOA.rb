@@ -55,7 +55,7 @@ module GO
   #  tsv
   #end
   GO.claim GO.tf_tg, :proc do 
-    tsv = TSV.setup({}, :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign"], :type => :double, :namespace => FNL.organism)
+    tsv = TSV.setup({}, :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign"], :type => :double, :namespace => ExTRI.organism)
 
     uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
     uni2name = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :persist => true
