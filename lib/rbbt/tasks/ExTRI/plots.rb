@@ -21,7 +21,7 @@ module ExTRI
     tsv = tsv.select("Prediction confidence" => 'High') if high_confidence
     tfs = tsv.column("Transcription Factor (Associated Gene Name)").values.uniq
     #tree = JSON.parse(Rbbt.data["TFClass.json"].read)
-    tree = JSON.parse(TFClass.hierarchy_json.read)
+    tree = JSON.parse(TFClass.hierarchy_json.produce.read)
     baseline = ExTRI.count_nodes(tree).last
     good = ExTRI.count_nodes(tree, {}, tfs).last
 
@@ -68,8 +68,7 @@ for (i in seq(1,length(labels))){
 }
 
 rbbt.require('readr')
-#data=read_file('#{Rbbt.data["TFClass.json"].find}')
-data=read_file('#{TFClass.hierarchy_json.find}')
+data=read_file('#{TFClass.hierarchy_json.produce.find}')
 
 #sunburst(data, colors=list(range=colors,domain=labels))
 
