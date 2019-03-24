@@ -238,5 +238,4 @@ module ExTRI
 
 end
 
-iii ExTRI.Thomas2015.produce(true).find if __FILE__ == $0
 
