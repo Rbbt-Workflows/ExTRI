@@ -32,6 +32,7 @@ require 'rbbt/tasks/ExTRI/regulon'
 require 'rbbt/tasks/ExTRI/greco'
 require 'rbbt/tasks/ExTRI/tf_tf'
 require 'rbbt/tasks/ExTRI/plots'
+require 'rbbt/tasks/ExTRI/adhoc'
 
 if __FILE__ == $0
   require 'rbbt/util/R'

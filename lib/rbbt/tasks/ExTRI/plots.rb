@@ -20,7 +20,6 @@ module ExTRI
     tsv = step(:ExTRI_confidence).load
     tsv = tsv.select("Prediction confidence" => 'High') if high_confidence
     tfs = tsv.column("Transcription Factor (Associated Gene Name)").values.uniq
-    #tree = JSON.parse(Rbbt.data["TFClass.json"].read)
     tree = JSON.parse(TFClass.hierarchy_json.produce.read)
     baseline = ExTRI.count_nodes(tree).last
     good = ExTRI.count_nodes(tree, {}, tfs).last

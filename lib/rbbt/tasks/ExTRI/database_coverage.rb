@@ -1,6 +1,6 @@
 require 'rbbt/sources/TFClass'
 module ExTRI
-  AP1_SYN=%w(FOS FOSB JUN JUNB JUND)
+  AP1_SYN=%w(FOS FOSB JUN JUNB JUND FOSL1 FOSL2)
   NFKB_SYN=%w(NFKB1 NFKB2 RELA RELB)
 
 
