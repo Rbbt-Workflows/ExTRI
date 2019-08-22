@@ -12,6 +12,7 @@ module ExTRI
     parser = TSV::Parser.new step(:pairs)
     fields = parser.fields
     TSV.traverse parser, :into => dumper do |pair, values|
+      pair = pair.first if Array === pair
       tf, tg = pair.split(":")
       next unless tfs.nil? or tfs.include? tf
       skip = []
@@ -19,6 +20,7 @@ module ExTRI
       not_tf_class = []
       signs = []
       fields.zip(values).each do |field,value|
+        value = value * ";"
         skip << field if high and field.include?("confidence") and value == "Low"
         present << field if field.include?("present") and value != ""
         not_tf_class << field if field.include?("TFClass_human") and value != "TFclass"
