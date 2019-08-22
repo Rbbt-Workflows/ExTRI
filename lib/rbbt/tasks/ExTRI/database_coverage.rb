@@ -146,6 +146,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
     #thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
+    cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip
 
     flagged = ExTRI.TFacts_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
@@ -207,6 +208,29 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       end
     end
 
+    Rbbt.share.databases.ExTRI.extra_databases.glob("*.tsv").each do |file|
+      name = File.basename(file).sub(/\.tsv$/,'')
+      db = TSV.open(file, :merge => true).unzip
+
+      log :adding_extra_db, name
+
+      db.key_field = tsv.key_field
+
+      tsv = attach_db tsv, db, name
+
+      db = normalize_db db
+
+      db.through do |k, values|
+        next if tsv.include? k
+        begin
+          new_values = k.split(":") + ([""] * (tsv.fields.length - 3 - db.fields.length)) + [name] + values
+          tsv[k] = new_values
+        rescue
+          raise $!
+        end
+      end
+    end
+
     tsv.process "Transcription Factor (Associated Gene Name)" do |list,key,values|
       key.split(":").first
     end
@@ -214,30 +238,6 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     tsv.process "Target Gene (Associated Gene Name)" do |list,key,values|
       key.split(":").last
     end
-
-    #cp.add_field "present" do
-    #  "TFCheckpoint"
-    #end
-
-    #cp.fields = cp.fields.collect{|f| "[TFCheckpoint] " << f}
-    #cp.key_field = "TF"
-    #
-    #new_cp = cp.annotate({})
-
-    #translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
-    #TSV.traverse cp, :into => new_cp do |tf, values|
-    #  new_tf = translation[tf] 
-    #  if new_tf.nil?
-    #    Log.error "Gene name not found from TFCheckpoint: " + tf
-    #    new_tf = tf
-    #  end
-    #  Log.info "TFCheckpoint Translation " << [tf, new_tf] * " => " if tf != new_tf
-    #  [new_tf, values]
-    #end
-
-    #cp = new_cp
-
-    #tsv.attach cp
 
     tfclass = TFClass.tfs.list
     tfclass << "AP1"

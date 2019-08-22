@@ -12,6 +12,7 @@ require 'rbbt/sources/signor'
 require 'rbbt/sources/GOA'
 require 'rbbt/sources/Intact'
 require 'rbbt/sources/uniprot'
+require 'rbbt/sources/CytReg'
 
 Workflow.require_workflow "Appris"
 module ExTRI
