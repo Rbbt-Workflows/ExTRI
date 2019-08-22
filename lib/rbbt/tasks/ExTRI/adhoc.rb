@@ -72,13 +72,18 @@ module ExTRI
 
     pmids = cyt_reg_pmids & trrust_pmids
 
-    pmids_pairs = TSV.setup({}, "PMID~CytReg,TRRUST,Common#:type=:double")
+    pmids_pairs = TSV.setup({}, "PMID~CytReg,TRRUST,Common,CytReg Signed,TRRUST Signed,Common Signed#:type=:double")
     pmids.each do |pmid|
-      pairs_c = cyt_reg.select("[CytReg] PMIDs" => /\b#{pmid}\b/).keys
+      pairs_cr = cyt_reg.select("[CytReg] PMIDs" => /\b#{pmid}\b/).keys
       pairs_t = trrust.select("[TRRUST] PMID" => /\b#{pmid}\b/).keys
 
-      common = pairs_c & pairs_t
-      pmids_pairs[pmid] = [pairs_c, pairs_t, common]
+      pairs_cr_s = pairs_cr.collect{|p| cyt_reg[p]["[CytReg] Activation/Repression"].collect{|a| [p,a]*"~"}}.flatten.uniq
+      pairs_t_s = pairs_t.collect{|p| trrust[p]["[TRRUST] Regulation"].collect{|a| [p,a]*"~"}}.flatten.uniq
+      pairs_t_s.reject!{|p| p.include? "Unknown"}
+
+      common = pairs_cr & pairs_t
+      common_s = pairs_cr_s & pairs_t_s
+      pmids_pairs[pmid] = [pairs_cr, pairs_t, common, pairs_cr_s, pairs_t_s, common_s]
     end
 
     pmids_pairs
@@ -89,16 +94,23 @@ module ExTRI
 
     tsv = step(:cyt_reg_analysis).load
 
-    res = TSV.setup({}, "PMID~All,CytReg,TRRUST,Common,Overlap %,Found by CytReg %,Found by TRRUST#:type=:list#:cast=:to_f")
+    res = TSV.setup({}, "PMID~All,CytReg,TRRUST,Common,Overlap %,Found by CytReg %,Found by TRRUST,All Signed,CytReg Signed,TRRUST Signed,Common Signed,Overlap % Signed,Found by CytReg % Signed,Found by TRRUST Signed#:type=:list#:cast=:to_f")
 
     tsv.each do |pmid,values|
-      cr, t, c = values.collect{|v| v.length}
+      cr, t, c, cr_s, t_s, c_s = values.collect{|v| v.length}
+
       all = cr + t - c
       overlap = c.to_f / all
       found_by_cr = cr.to_f / all
       found_by_t = t.to_f / all
 
-      res[pmid] = [all, cr, t, c, (overlap * 100).to_i, (found_by_cr * 100).to_i, (found_by_t * 100).to_i]
+      all_s = cr_s + t_s - c_s
+      overlap_s = c_s.to_f / all_s
+      found_by_cr_s = cr_s.to_f / all_s
+      found_by_t_s = t_s.to_f / all_s
+
+
+      res[pmid] = [all, cr, t, c, (overlap * 100).to_i, (found_by_cr * 100).to_i, (found_by_t * 100).to_i, all_s, cr_s, t_s, c_s, (overlap_s * 100).to_i, (found_by_cr_s * 100).to_i, (found_by_t_s * 100).to_i]
     end
     
     res
