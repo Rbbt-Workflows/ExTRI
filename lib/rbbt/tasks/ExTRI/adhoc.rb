@@ -89,7 +89,7 @@ module ExTRI
 
     tsv = step(:cyt_reg_analysis).load
 
-    res = TSV.setup({}, "PMID~CytReg,TRRUST,Common,Overlap %,Found by CytReg %,Found by TRRUST#:type=:list#:cast=:to_f")
+    res = TSV.setup({}, "PMID~All,CytReg,TRRUST,Common,Overlap %,Found by CytReg %,Found by TRRUST#:type=:list#:cast=:to_f")
 
     tsv.each do |pmid,values|
       cr, t, c = values.collect{|v| v.length}
