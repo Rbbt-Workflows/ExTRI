@@ -60,4 +60,47 @@ module ExTRI
     iif fabios
     tsv.select(:key){|k| ! fabios.include? k.split(":").values_at(0,1) * ":"}
   end
+  
+  dep :pairs
+  task :cyt_reg_analysis => :tsv do
+    pairs = step(:pairs).load
+    cyt_reg = pairs.select("[CytReg] present" => "CytReg")
+    trrust = pairs.select("[TRRUST] present" => "TRRUST")
+
+    cyt_reg_pmids = cyt_reg.column("[CytReg] PMIDs").values.flatten.collect{|v| v.split(";")}.flatten.uniq
+    trrust_pmids = trrust.column("[TRRUST] PMID").values.flatten.collect{|v| v.split(";")}.flatten.uniq
+
+    pmids = cyt_reg_pmids & trrust_pmids
+
+    pmids_pairs = TSV.setup({}, "PMID~CytReg,TRRUST,Common#:type=:double")
+    pmids.each do |pmid|
+      pairs_c = cyt_reg.select("[CytReg] PMIDs" => /\b#{pmid}\b/).keys
+      pairs_t = trrust.select("[TRRUST] PMID" => /\b#{pmid}\b/).keys
+
+      common = pairs_c & pairs_t
+      pmids_pairs[pmid] = [pairs_c, pairs_t, common]
+    end
+
+    pmids_pairs
+  end
+
+  dep :cyt_reg_analysis
+  task :cyt_reg_statistics => :tsv do
+
+    tsv = step(:cyt_reg_analysis).load
+
+    res = TSV.setup({}, "PMID~CytReg,TRRUST,Common,Overlap %,Found by CytReg %,Found by TRRUST#:type=:list#:cast=:to_f")
+
+    tsv.each do |pmid,values|
+      cr, t, c = values.collect{|v| v.length}
+      all = cr + t - c
+      overlap = c.to_f / all
+      found_by_cr = cr.to_f / all
+      found_by_t = t.to_f / all
+
+      res[pmid] = [all, cr, t, c, (overlap * 100).to_i, (found_by_cr * 100).to_i, (found_by_t * 100).to_i]
+    end
+    
+    res
+  end
 end

@@ -17,6 +17,7 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    TFCheckpoint.rb
    TFClass.rb
    TRRUST.rb
+   CytReg.rb
   }
   knowledge_base=rbbt/knowledge_base{
    ExTRI.rb
