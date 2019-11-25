@@ -136,7 +136,7 @@ module ExTRI
             end
 
       next if pmids.nil? or pmids.empty?
-      pmids = pmids.split(";")
+      pmids = pmids.collect{|p| p.split(";")}.flatten
 
       counts[key] ||= [[],[],[]]
 
