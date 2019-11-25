@@ -120,7 +120,7 @@ module ExTRI
 
     tsv = tsv.slice([pmid_field, confidence_field].compact)
 
-    counts = TSV.setup({}, :key_field => type, :fields => %w(All High Low), :type => :double)
+    counts = TSV.setup({}, :key_field => type, :fields => %w(All High Low), :type => :double, :cast => :to_i)
     tsv.through do |k,values|
       tf, tg = k.split(":")
       pmids, conf = values
