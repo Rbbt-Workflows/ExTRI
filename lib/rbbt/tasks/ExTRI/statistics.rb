@@ -201,6 +201,43 @@ module ExTRI
 
   export :venn, :top
 
+  dep :top, :compute => [:bootstrap, 3, :canfail] do |jobname,options|
+    ExTRI::DATABASES.collect do |db|
+      {:inputs => options.merge(:db => db)}
+    end
+  end
+  task :db_ranks => :tsv do
+
+    dependencies.inject(nil) do |acc,dep|
+      next acc if dep.error?
+      tsv = dep.load
+      tsv.unnamed = true
+      tsv.monitor = true
+      db = dep.recursive_inputs[:db]
+      %w(All High Low).each do |set|
+        log :rank, "Ranks for #{set} #{db}"
+        column = tsv.column(set)
+        values = []
+        column.values.flatten.sort.reverse.each_with_index{|v,i| values << [v, i] }
+        values = values.reverse
+        tsv.add_field set + " rank" do |e,_v|
+          v = column[e]
+          values.bsearch{|p| p.first >= v}.last
+        end
+      end
+      tsv.fields = tsv.fields.collect{|f| "[#{db}] #{f}" }
+      if acc.nil?
+        acc = tsv
+      else
+        acc.attach tsv, :complete => true
+      end
+      Log.tsv acc
+
+      acc
+    end
+
+  end
+
   dep :ExTRI_clean
   task :gene_sentence_counts => :tsv do
     counts = TSV.setup({}, :key_field => "Associated Gene Name", :fields => ["Sentences as TF", "Sentences as TG"], :type => :list, :namespace => ExTRI.organism)
