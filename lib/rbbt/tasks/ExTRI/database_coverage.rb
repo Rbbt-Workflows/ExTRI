@@ -158,7 +158,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     tsv = TSV.setup({}, :key_field => "TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "[ExTRI] Confidence", "[ExTRI] PMID"], :type => :double, :namespace => ExTRI.organism)
 
-    confidence = orig.fields.select{|f| f.include? "Thresh"}.first
+    confidence = orig.fields.select{|f| f.include? "Predi"}.first
     pmids = {}
     conf = {}
     orig.through do |key,values|
