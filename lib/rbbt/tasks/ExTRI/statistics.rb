@@ -125,6 +125,7 @@ module ExTRI
       tf, tg = k.split(":")
       pmids, conf = values
 
+      conf = conf.first if Array === conf
       
       key = case type
             when "TF"
