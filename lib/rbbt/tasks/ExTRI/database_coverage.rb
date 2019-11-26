@@ -4,7 +4,7 @@ module ExTRI
   NFKB_SYN=%w(NFKB1 NFKB2 RELA RELB)
 
 
-  DATABASES=%w(ExTRI HTRI TFacts TRRUST Intact Encode)
+  DATABASES=%w(ExTRI HTRI TFacts TRRUST Intact CytReg)
 
   helper :normalize_db do |db|
     new = db.annotate({})

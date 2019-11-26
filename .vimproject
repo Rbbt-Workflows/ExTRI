@@ -47,6 +47,8 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    plots.rb
 
    adhoc.rb
+
+   manuscript.rb
   }
  }
  data=data filter="*"{
