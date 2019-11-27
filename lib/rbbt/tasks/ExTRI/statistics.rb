@@ -27,15 +27,19 @@ module ExTRI
       good_confidence_fields.each do |f|
         name = f.match(/\[(.*)\]/)[1]
         next if name == "ExTRI"
-        tsv.select(f){|v| v =~ /Low/i}.keys.each do |k|
-          tsv[k]["[#{ name }] present"] = ""
+        tsv.select(f => 'Low').keys.each do |k|
+          v = tsv[k]
+          v["[#{ name }] present"] = ""
+          tsv[k] = v
         end
       end
     end
 
     if confidence_ExTRI
       tsv.select("[ExTRI] Confidence" => "Low").keys.each do |k|
-        tsv[k]["[ExTRI] present"] = ""
+        v = tsv[k]
+        v["[ExTRI] present"] = ""
+        tsv[k] = v
       end
     end
 
