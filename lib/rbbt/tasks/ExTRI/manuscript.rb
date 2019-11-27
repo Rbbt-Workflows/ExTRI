@@ -82,6 +82,14 @@ module ExTRI
       ].collect{|l| l.length}
     end
 
+      res["Union"] = [
+        db_pairs.values.flatten.uniq,
+        hc_db_pairs.values.flatten.uniq, 
+        db_pairs.values.flatten.uniq.collect{|p| p.split(":").first}.uniq, 
+        hc_db_pairs.values.flatten.uniq.collect{|p| p.split(":").first}.uniq,
+        db_pairs.values.flatten.uniq.collect{|p| p.split(":").last}.uniq, 
+        hc_db_pairs.values.flatten.uniq.collect{|p| p.split(":").last}.uniq,
+      ].collect{|l| l.length}
     res
   end
 end

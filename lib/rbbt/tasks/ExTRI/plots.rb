@@ -33,9 +33,39 @@ module ExTRI
     percent
   end
 
-  dep :sunburst_percents
+  dep :pairs
+  task :sunburst_percents_kb => :yaml do |high_confidence|
+    tsv = step(:pairs).load
+
+    presence_fields = tsv.fields.select{|f| f.include?('present') && ! f.include?('ExTRI')} 
+    
+    tfs = presence_fields.inject([]) do |acc,f|
+      acc += tsv.select(f){|v| ! (v.empty? || v.nil?)  }.keys.collect{|k| k.split(":").first}
+    end.uniq
+    
+    tree = JSON.parse(TFClass.hierarchy_json.produce.read)
+    baseline = ExTRI.count_nodes(tree).last
+    good = ExTRI.count_nodes(tree, {}, tfs).last
+
+    percent = {}
+    baseline.each do |k,v|
+      p = good[k].to_f / v
+      percent[k] = p
+    end
+
+    percent
+  end
+
+  dep :sunburst_percents do |jobname,options|
+    if options[:source].to_s == "ExTRI"
+      {:task => :sunburst_percents, :jobname => jobname, :inputs => options}
+    else
+      {:task => :sunburst_percents_kb, :jobname => jobname, :inputs => options}
+    end
+  end
+  input :source, :select, "Source of TRI", :ExTRI, :select_options => %w(ExTRI KB)
   task :sunburst => :text do 
-    percent = step(:sunburst_percents).load
+    percent = dependencies.first.load
 
     labels = percent.keys
     percents = percent.values_at *labels
