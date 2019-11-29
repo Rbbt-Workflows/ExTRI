@@ -129,7 +129,8 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
   EOF
   dep :ExTRI_confidence, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
-  task :pairs => :tsv do
+  input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold"]
+  task :pairs => :tsv do |confidence|
     id_file = Organism.identifiers(ExTRI.organism)
 
     encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
@@ -158,11 +159,11 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     tsv = TSV.setup({}, :key_field => "TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "[ExTRI] Confidence", "[ExTRI] PMID"], :type => :double, :namespace => ExTRI.organism)
 
-    confidence = orig.fields.select{|f| f.include? "Predi"}.first
+    confidence_field = orig.fields.select{|f| f.include? confidence}.first
     pmids = {}
     conf = {}
     orig.through do |key,values|
-      c = values[confidence]
+      c = values[confidence_field]
       pmid, s, tf, tg = key.split(":")
       pair =  [tf,tg]
       pmids[pair] ||= []

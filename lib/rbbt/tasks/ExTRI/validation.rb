@@ -206,13 +206,13 @@ Both confidence calls are force to Low if the target gene is a signal transducti
   end
 
   dep :ExTRI_confidence
-  input :confidence, :select, "Confidence criteria", "Predicted", :select_options => ["Predicted", "Threshold"]
+  input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold"]
   desc <<-EOF
 Assigns confidence for every ExTRI triplet (TF:TG:PMID) based on the best confidence call for it (best sentence confidence)
   EOF
   task :triplet_confidence => :tsv do |confidence|
     tsv = step(:ExTRI_confidence).load
-    confidence_field = confidence == "Predicted" ? "Prediction confidence" : tsv.fields.select{|f| f =~ /Threshold/}.first
+    confidence_field = confidence == "Prediction" ? "Prediction confidence" : tsv.fields.select{|f| f =~ /Threshold/}.first
 
     res =  TSV.setup({}, :key_field => "TF:TG:PMID", :fields => [confidence_field], :type => :single)
     tsv.column(confidence_field).through do |k,confidence|
