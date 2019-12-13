@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Bootstrap ExTRI
+
+$ #{$0} [options] <filename.tsv|->
+
+Use - to read from STDIN
+
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+require 'rbbt/workflow'
+
+Workflow.require_workflow "ExTRI"
+
+ExTRI.job(:ExTRI_confidence).run

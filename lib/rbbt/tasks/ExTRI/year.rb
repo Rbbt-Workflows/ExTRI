@@ -52,9 +52,9 @@ module ExTRI
           pmid_field = "[#{database}] PMID"
           confidence_field = "[#{database}] Confidence"
           confidence = all_fields.include?(confidence_field)? values[confidence_field] : ""
-          next if confidence == "Low" and high_confidence
+          next if confidence.include?("Low") && high_confidence
           pmids = values[pmid_field]
-          pmids.split(";").each do |pmid|
+          pmids.collect{|p| p.split(";")}.flatten.uniq.each do |pmid|
             pmid = pmid.split(":").last
             pmid_database[pmid] ||= []
             pmid_database[pmid] << [pair, database]
@@ -96,7 +96,7 @@ module ExTRI
       next if year.nil?
       res = []
       year_counts = {}
-      databases.zip(values[1..-1]).each do |database, values|
+      databases.zip(values[2..-1]).each do |database, values|
         if values.length > 0
           database_years[database] ||= [0] * years.length
           database_years[database][years.index(year)] += 1
@@ -118,9 +118,11 @@ rbbt.require('plyr')
 rbbt.require('ggplot2')
 
 m <- rbbt.tsv.melt(data, "Year", "Count")
-g <- ggplot(m, aes(x=as.numeric(Year), y=Count, color=Database)) + geom_line() + geom_point()
+g <- ggplot(m, aes(x=Year, y=Count, color=Database)) + geom_line() + geom_point() + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=16))
 
-rbbt.png_plot('#{self.path}', 'g')
+rbbt.png_plot('#{self.tmp_path}', 'plot(g)', height=600, width=800)
+
+data = NULL
     EOF
 
     nil

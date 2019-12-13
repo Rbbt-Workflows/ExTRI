@@ -92,4 +92,39 @@ module ExTRI
       ].collect{|l| l.length}
     res
   end
+
+  dep :ExTRI_postprocess
+  extension :xlsx
+  task :post_processing_sentences => :binary do
+    book = RubyXL::Workbook.new
+    Dir.glob(step(:ExTRI_postprocess).files_dir + "/*").sort.each_with_index do |file,i|
+      name = File.basename file
+      log :processing, "Processing #{ name }"
+      tsv = TSV.open(file)
+
+      fields, rows = TSV._excel_data(tsv)
+      
+      fields = %w(ID TF TG Score Sentence)
+
+      if i == 0
+        sheet = book.worksheets.first
+        sheet.sheet_name = name
+      else
+        sheet = book.add_worksheet(name)
+      end
+
+      fields.each_with_index do |e,i|
+        sheet.add_cell(0, i, e)
+      end
+
+      rows.each_with_index do |cells,i|
+        cells.each_with_index do |e,j|
+          sheet.add_cell(i+1, j, e)
+        end
+      end
+
+    end
+    book.write self.tmp_path
+    nil
+  end
 end

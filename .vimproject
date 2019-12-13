@@ -74,6 +74,9 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
   }
  }
  share=share filter="*"{
+  rbbt_commands=rbbt_commands{
+   bootstrap
+   }
   databases=databases{
    ExTRI=ExTRI{
     Encode
