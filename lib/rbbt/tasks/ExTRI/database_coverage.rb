@@ -101,6 +101,8 @@ module ExTRI
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
     thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true).unzip
 
+    geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"])
+
     flagged = ExTRI.TFacts_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
       sign,species,source,pmids = values
@@ -116,6 +118,7 @@ module ExTRI
     tsv = attach_db tsv, goa, "GOA"
     tsv = attach_db tsv, intact, "Intact"
     tsv = attach_db tsv, signor, "Signor"
+    tsv = attach_db tsv, geredb, "GEREDB"
     #tsv = attach_db tsv, thomas, "Thomas2015"
 
     tsv
@@ -147,6 +150,8 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip(0, true)
     #thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
+    geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"]).unzip(0,true)
+
     cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
 
     flagged = ExTRI.TFacts_flagged_articles.list
@@ -189,6 +194,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       [intact, "Intact"],
       [signor, "Signor"],
       [cyt_reg, "CytReg"],
+      [geredb, "GEREDB"],
       #[thomas, "Thomas2015"]
     ].each do |db,name|
       log :adding_db, name
@@ -263,6 +269,4 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       (tfclass.include? tf) ? "TFClass new" : ""
     end
   end
-
-
 end
