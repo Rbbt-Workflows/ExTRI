@@ -1,5 +1,6 @@
 require 'rbbt-util'
 require 'rbbt/resource'
+require_relative 'TFClass'
 
 module GEREDB
   extend Resource
@@ -21,7 +22,8 @@ module GEREDB
         CMD.cmd("unrar x file.rar")
         tsv = TSV.open 'Links.txt', :header_hash => '', :type => :double, :merge => true
         evidence = TSV.open "Evidence.txt", :header_hash => '', :type => :double, :key_field => 'lid', :merge => true
-        tsv = tsv.attach evidence, :merge => true, :fields => %w(pmid stn)
+        evidence = evidence.to_list{|l| l* ";"}
+        tsv.attach evidence, :merge => true, :fields => %w(pmid stn)
       end
     end
     tsv.to_s
@@ -31,7 +33,10 @@ module GEREDB
     tsv = GEREDB[".source"].data.tsv :key_field => "reg", :fields => %w(tar eff pmid stn), :type => :double, :namespace => GEREDB.organism, :merge => true
     tsv.key_field = "Transcription Factor (Associated Gene Name)"
     tsv.fields = ["Target Gene (Associated Gene Name)", "Effect", "PMID", "Sentence Number"]
-    tsv
+
+    dbtfs = TFClass.tfs.list
+
+    tsv.select dbtfs
   end
 
 
