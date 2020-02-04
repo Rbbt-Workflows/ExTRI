@@ -36,11 +36,11 @@ module GEREDB
 
     dbtfs = TFClass.tfs.list
 
-    tsv.select dbtfs
+    tsv.select :key => dbtfs
   end
 
 
 end
 
-iif GEREDB.tf_tg.produce.find if __FILE__ == $0
+iif GEREDB.tf_tg.produce(true).find if __FILE__ == $0
 
