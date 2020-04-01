@@ -44,12 +44,13 @@ module ExTRI
     pmid_journal = step(:pmid_journal).load
     all_fields = tsv.fields
 
-    databases = %w(ExTRI HTRI TRRUST TFacts Intact Signor )
+    databases = ExTRI::DATABASES
     pmid_database = {}
     tsv.with_monitor do
       tsv.through do |pair, values|
         databases.each do |database|
           pmid_field = "[#{database}] PMID"
+          next unless all_fields.include? pmid_field
           confidence_field = "[#{database}] Confidence"
           confidence = all_fields.include?(confidence_field)? values[confidence_field] : ""
           next if confidence.include?("Low") && high_confidence
@@ -118,7 +119,7 @@ rbbt.require('plyr')
 rbbt.require('ggplot2')
 
 m <- rbbt.tsv.melt(data, "Year", "Count")
-g <- ggplot(m, aes(x=Year, y=Count, color=Database)) + geom_line() + geom_point() + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=16))
+g <- ggplot(m, aes(x=Year, y=Count)) + geom_line(aes(group=Database, color=Database)) + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=16))
 
 rbbt.png_plot('#{self.tmp_path}', 'plot(g)', height=600, width=800)
 

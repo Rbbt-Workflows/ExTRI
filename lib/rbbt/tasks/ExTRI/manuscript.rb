@@ -127,4 +127,21 @@ module ExTRI
     book.write self.tmp_path
     nil
   end
+
+  dep :pairs
+  task :adhoc => :integer do
+    pairs = step(:pairs).load
+
+    selected = pairs.select("[ExTRI] present" => "ExTRI").select("[ExTRI] Confidence" => "High")
+    set_info :ExTRI_HC, selected.length
+    set_info :ExTRI_HC_low, selected.select("[ExTRI] PMID"){|ls| ls.collect{|l| l.split(";")}.flatten.uniq.length <= 2}.length
+    set_info :ExTRI_HC_high, selected.select("[ExTRI] PMID"){|ls| ls.collect{|l| l.split(";")}.flatten.uniq.length > 2}.length
+    
+    selected.select("[ExTRI] PMID"){|ls| ls.collect{|l| l.split(";")}.flatten.uniq.length <= 2}.select do |k,values|
+      values.to_hash.select do |field,value|
+        next false if field.include? "ExTRI"
+        field.include?('present') && ! value.empty?
+      end.any?
+    end.length
+  end
 end
