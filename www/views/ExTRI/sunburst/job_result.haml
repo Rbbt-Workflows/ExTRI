@@ -1,0 +1,9 @@
+.job_control
+  = workflow_partial('job_result/job_control', workflow, task, locals)
+
+- url = [workflow.to_s, task, jobname, "file", "widget.html"] * "/"
+:sass
+  iframe
+    width: 100%
+    height: 1000px
+%iframe(src="#{"/sandbox/" + url}")

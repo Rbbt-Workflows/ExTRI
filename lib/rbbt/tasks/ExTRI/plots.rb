@@ -3,30 +3,52 @@ module ExTRI
 
   def self.count_nodes(info, count = {}, good = nil)
     name = info["name"] 
-    parts = name.split(/[\s,]+/)
-    total = (good.nil? || (good & parts).any?) ? 1 : 0
-    return [total, count] unless info["children"]
-    info["children"].each do |child|
-      sub_total, _c = count_nodes(child, count, good)
-      total += sub_total
+
+    if info["children"].nil?
+      return [[], 0] if info["id"].split(".").length < 5
+      parts = name.scan(/[a-z0-9\-\?]+/i)
+      parts = parts & good if good
+      return [parts, count] 
     end
+
+    total = []
+    info["children"].each do |child|
+      list, _c = count_nodes(child, count, good)
+      total += list
+    end
+
     count[name] = total
     [total, count]
   end
 
   dep :ExTRI_confidence
+  dep :top, :type => "TF"
   input :high_confidence, :boolean, "Restrict to high confidence predictions", false
   task :sunburst_percents => :yaml do |high_confidence|
     tsv = step(:ExTRI_confidence).load
+    top = step(:top).load
+
     tsv = tsv.select("Prediction confidence" => 'High') if high_confidence
     tfs = tsv.column("Transcription Factor (Associated Gene Name)").values.uniq
+
     tree = JSON.parse(TFClass.hierarchy_json.produce.read)
     baseline = ExTRI.count_nodes(tree).last
     good = ExTRI.count_nodes(tree, {}, tfs).last
 
     percent = {}
     baseline.each do |k,v|
-      p = good[k].to_f / v
+      genes = good[k]
+      p = genes.any? ? genes.length.to_f / v.length : 0
+      top_p = top.select(genes).sort_by{|g,c| c.first}.reverse.collect{|g,c| g}[0..2]
+
+      case top.select(genes).length
+      when 0
+      when 1, 2, 3
+        k = k + " (e.g. " + (top_p * ", ") + ")" if top_p.any?
+      else
+        k = k + " (e.g. " + (top_p * ", ") + ", ...)" if top_p.any?
+      end
+
       percent[k] = p
     end
 
@@ -34,8 +56,10 @@ module ExTRI
   end
 
   dep :pairs
+  dep :top, :type => "TF", :db => "All KB"
   task :sunburst_percents_kb => :yaml do |high_confidence|
     tsv = step(:pairs).load
+    top = step(:top).load
 
     presence_fields = tsv.fields.select{|f| f.include?('present') && ! f.include?('ExTRI')} 
     
@@ -49,7 +73,16 @@ module ExTRI
 
     percent = {}
     baseline.each do |k,v|
-      p = good[k].to_f / v
+      genes = good[k]
+      p = genes.any? ? genes.length.to_f / v.length : 0
+      top_p = top.select(genes).sort_by{|g,c| c.first}.reverse.collect{|g,c| g}[0..2]
+      case top.select(genes).length
+      when 0
+      when 1, 2, 3
+        k = k + " (e.g. " + (top_p * ", ") + ")" if top_p.any?
+      else
+        k = k + " (e.g. " + (top_p * ", ") + ", ...)" if top_p.any?
+      end
       percent[k] = p
     end
 
@@ -69,12 +102,26 @@ module ExTRI
 
     labels = percent.keys
     percents = percent.values_at *labels
+
+    tree_text = TFClass.hierarchy_json.produce.read
+
+    labels.each do |label|
+      orig = label.split(" (e.g.").first
+      iii orig
+      iii tree_text.scan(/"#{orig}"/)
+      tree_text.gsub!(/"#{orig}"/, '"' + label + '"')
+    end
+
+    new_tree = {}
+
+    Open.write(file('tree.json'), tree_text)
     
     widget = file('widget.html')
     Open.mkdir self.files_dir
-    TmpFile.with_file(labels.to_json) do |labels|
-      TmpFile.with_file(percents.to_json) do |percents|
-        R.run <<-EOF
+    TmpFile.with_file(tree_text) do |tree_file|
+      TmpFile.with_file(labels.to_json) do |labels|
+        TmpFile.with_file(percents.to_json) do |percents|
+          R.run <<-EOF
 rbbt.require('timelyportfolio/sunburstR')
 rbbt.require("rjson")
 rbbt.require("colorspace")
@@ -97,7 +144,7 @@ for (i in seq(1,length(labels))){
 }
 
 rbbt.require('readr')
-data=read_file('#{TFClass.hierarchy_json.produce.find}')
+data=read_file('#{tree_file}')
 
 #sunburst(data, colors=list(range=colors,domain=labels))
 
@@ -123,6 +170,7 @@ sizingPolicy = sizingPolicy, dependencies = dep)
 htmlwidgets::saveWidget(w, file='#{widget}', selfcontained=FALSE)
 
 EOF
+        end
       end
     end
     "DONE"

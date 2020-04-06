@@ -105,13 +105,29 @@ module ExTRI
   
   dep :pairs
   dep :triplet_confidence
-  input :db, :select, "Database to consider for PMID counts", "ExTRI", :select_options => ExTRI::DATABASES
+  input :db, :select, "Database to consider for PMID counts", "ExTRI", :select_options => ExTRI::DATABASES + ["All KB"]
   input :type, :select, "Aggregate by TF, TG, or pair", "TF", :select_options => %w(TF TG TF:TG)
   input :by_triplet, :boolean, "Consider confidence by triplet in ExTRI", true
   input :remove_autoregulation, :boolean, "Filter out ExTRI entries for auto-regulation", false
   input :remove_non_TFClass, :boolean, "Filter out ExTRI entries for non TFClass TF", false
   task :articles => :tsv do |db,type, by_triplet,remove_autoregulation,remove_non_TFClass|
     tsv = step(:pairs).load
+
+    if db == "All KB"
+      fields = tsv.fields
+      tsv = tsv.add_field "[All KB] present" do |k,values|
+        res = (values.flatten & ExTRI::DATABASES).any? ? ["All KB"] : []
+        res
+      end
+
+      tsv = tsv.add_field "[All KB] PMID" do |k,values|
+        pmids = ExTRI::DATABASES.collect do |db|
+          key = "[#{db}] PMID"
+          values.fields.include?(key) ? values[key] : []
+        end.flatten.collect{|p| p.split(";")}.flatten.uniq
+        [pmids * ";"]
+      end
+    end
 
     tsv = tsv.select("Auto-regulation"){|v| v.empty?} if remove_autoregulation
     tsv = tsv.select("TFClass"){|v| ! v.empty?} if remove_non_TFClass

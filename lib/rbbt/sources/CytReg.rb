@@ -20,6 +20,7 @@ module CytReg
     tsv = tsv.reorder("TF",nil, :zipped => true, :merge => true)
     tsv.key_field = "Transcription Factor (Associated Gene Name)"
     tsv.fields = tsv.fields.tap{|f| f[0] = "Cytokine (Associated Gene Name)"}
+    tsv.fields = tsv.fields.collect{|f| f == "PMIDs" ? "PMID" : f }
     tsv
   end
 end

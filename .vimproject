@@ -103,8 +103,11 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    main=main{
     curation.haml
    }
-   FNL=FNL{
+   ExTRI=ExTRI{
     venn=venn{
+     job_result.haml
+    }
+    sunburst=sunburst{
      job_result.haml
     }
     top=top{

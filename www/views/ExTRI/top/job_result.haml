@@ -1,3 +1,6 @@
+.job_control
+  = workflow_partial('job_result/job_control', workflow, task, locals)
+
 -result = job.load
 - if result.any?
   - table_id = [workflow.to_s, task, jobname] * "_"
