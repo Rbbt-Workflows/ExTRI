@@ -7,3 +7,9 @@
     width: 100%
     height: 1000px
 %iframe(src=url)
+
+= table do
+  - tsv = TSV.setup({}, "Class~Percent")
+  - job.dependencies.first.load.each do |c,p|
+    - tsv[c] = p
+  - tsv
