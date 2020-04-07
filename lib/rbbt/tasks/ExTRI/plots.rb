@@ -112,6 +112,7 @@ module ExTRI
     percent
   end
 
+  input :high_confidence, :boolean, "Restrict to high confidence predictions", false
   dep :sunburst_percents_kb do |jobname,options|
     if options[:source].to_s == "ExTRI"
       {:task => :sunburst_percents, :jobname => jobname, :inputs => options}
