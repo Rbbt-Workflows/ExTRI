@@ -35,6 +35,15 @@ module ExTRI
     baseline = ExTRI.count_nodes(tree).last
     good = ExTRI.count_nodes(tree, {}, tfs).last
 
+    good_counts = TSV.setup({}, "Catergory~All,Found#:type=:list#:cast=:to_f")
+    good.each do |cat,genes|
+      all = baseline[cat]
+      good_counts[cat] = [all.length, genes.length]
+    end
+
+    Open.write(file('genes_per_cat.yaml'), good.to_yaml)
+    Open.write(file('counts_per_cat.yaml'), good_counts.to_s)
+
     percent = {}
     baseline.each do |k,v|
       genes = good[k]
@@ -57,12 +66,18 @@ module ExTRI
 
   dep :pairs
   dep :top, :type => "TF", :db => "All KB"
-  task :sunburst_percents_kb => :yaml do |high_confidence|
+  input :remove_ExTRI, :boolean, "Do not include ExTRI in the counts when looking at All KB", false
+  task :sunburst_percents_kb => :yaml do |remove_ExTRI|
     tsv = step(:pairs).load
     top = step(:top).load
 
-    presence_fields = tsv.fields.select{|f| f.include?('present') && ! f.include?('ExTRI')} 
+    if remove_ExTRI
+      presence_fields = tsv.fields.select{|f| f.include?('present') && ! f.include?('ExTRI')} 
+    else
+      presence_fields = tsv.fields.select{|f| f.include?('present')} 
+    end
     
+    iii presence_fields
     tfs = presence_fields.inject([]) do |acc,f|
       acc += tsv.select(f){|v| ! (v.empty? || v.nil?)  }.keys.collect{|k| k.split(":").first}
     end.uniq
@@ -71,6 +86,14 @@ module ExTRI
     baseline = ExTRI.count_nodes(tree).last
     good = ExTRI.count_nodes(tree, {}, tfs).last
 
+    good_counts = TSV.setup({}, "Catergory~All,Found#:type=:list#:cast=:to_f")
+    good.each do |cat,genes|
+      all = baseline[cat]
+      good_counts[cat] = [all.length, genes.length]
+    end
+
+    Open.write(file('genes_per_cat.yaml'), good.to_yaml)
+    Open.write(file('counts_per_cat.yaml'), good_counts.to_s)
     percent = {}
     baseline.each do |k,v|
       genes = good[k]
@@ -89,7 +112,7 @@ module ExTRI
     percent
   end
 
-  dep :sunburst_percents do |jobname,options|
+  dep :sunburst_percents_kb do |jobname,options|
     if options[:source].to_s == "ExTRI"
       {:task => :sunburst_percents, :jobname => jobname, :inputs => options}
     else
