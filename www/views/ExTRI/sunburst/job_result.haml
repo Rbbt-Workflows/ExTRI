@@ -9,11 +9,10 @@
 %iframe(src=url)
 
 = table do
-  - tsv = TSV.setup({}, "Class~Percent")
+  - tsv = TSV.setup({}, "Class~Proportion")
   - job.dependencies.first.load.each do |c,p|
     - tsv[c] = p
   - tsv
 
 = table do
-  - tsv = TSV.setup({}, "Class~Percent")
   - job.dependencies.first.file('counts_per_cat.tsv').tsv
