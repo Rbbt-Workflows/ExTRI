@@ -44,7 +44,7 @@ module TFClass
   def self.build_hier(hier, code)
     subset = "Class"
     info = {:name => hier[code][:name], :id => code, :subset => subset}
-    if hier[code][:children]
+    if hier[code][:children] && hier[code][:children].any?
       children = hier[code][:children].collect{|c|
         build_hier(hier, c)
       }
@@ -69,14 +69,26 @@ module TFClass
       pre = codes[0..-2]
       hier[codes*"."] ||= {}
       hier[codes*"."][:name] = label
+      hier[codes*"."][:children] = []
+
       hier[pre*"."] ||= {}
+      hier[pre*"."][:name] ||= "Missing"
       hier[pre*"."][:children] ||= []
       hier[pre*"."][:children] << codes * "."
     end
     hier[''] = {:name => 'DbTFs', :children => first}
+
+    hier.each do |term,info|
+      
+      codes = term.split(".")
+      pre = codes[0..-2]
+
+      if pre.length > 1 && ! hier[pre*"."][:children].include?(term)
+        hier[pre*"."][:children] << term
+      end
+    end
     
     build_hier(hier, '').to_json
-
   end
 
   TFClass.claim TFClass.tf_genus, :proc do 
