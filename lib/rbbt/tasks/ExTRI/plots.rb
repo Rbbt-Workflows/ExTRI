@@ -67,7 +67,8 @@ module ExTRI
   dep :pairs
   dep :top, :type => "TF", :db => "All KB"
   input :remove_ExTRI, :boolean, "Do not include ExTRI in the counts when looking at All KB", false
-  task :sunburst_percents_kb => :yaml do |remove_ExTRI|
+  input :high_confidence, :boolean, "Restrict to high confidence predictions", false
+  task :sunburst_percents_kb => :yaml do |remove_ExTRI,high_confidence|
     tsv = step(:pairs).load
     top = step(:top).load
 
@@ -77,9 +78,12 @@ module ExTRI
       presence_fields = tsv.fields.select{|f| f.include?('present')} 
     end
     
-    iii presence_fields
     tfs = presence_fields.inject([]) do |acc,f|
-      acc += tsv.select(f){|v| ! (v.empty? || v.nil?)  }.keys.collect{|k| k.split(":").first}
+      if f.include?("ExTRI") and high_confidence
+        acc += tsv.select("[ExTRI] Confidence" => 'High').select(f){|v| ! (v.empty? || v.nil?)  }.keys.collect{|k| k.split(":").first}
+      else
+        acc += tsv.select(f){|v| ! (v.empty? || v.nil?)  }.keys.collect{|k| k.split(":").first}
+      end
     end.uniq
     
     tree = JSON.parse(TFClass.hierarchy_json.produce.read)
@@ -112,7 +116,6 @@ module ExTRI
     percent
   end
 
-  input :high_confidence, :boolean, "Restrict to high confidence predictions", false
   dep :sunburst_percents_kb do |jobname,options|
     if options[:source].to_s == "ExTRI"
       {:task => :sunburst_percents, :jobname => jobname, :inputs => options}
