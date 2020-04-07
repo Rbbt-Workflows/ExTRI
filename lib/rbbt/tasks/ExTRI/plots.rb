@@ -67,7 +67,7 @@ module ExTRI
   dep :pairs
   dep :top, :type => "TF", :db => "All KB"
   input :remove_ExTRI, :boolean, "Do not include ExTRI in the counts when looking at All KB", false
-  input :high_confidence, :boolean, "Restrict to high confidence predictions", false
+  input :high_confidence, :boolean, "Restrict ExTRI to high confidence predictions", false
   task :sunburst_percents_kb => :yaml do |remove_ExTRI,high_confidence|
     tsv = step(:pairs).load
     top = step(:top).load
