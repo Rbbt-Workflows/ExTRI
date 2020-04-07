@@ -42,7 +42,7 @@ module ExTRI
     end
 
     Open.write(file('genes_per_cat.yaml'), good.to_yaml)
-    Open.write(file('counts_per_cat.yaml'), good_counts.to_s)
+    Open.write(file('counts_per_cat.tsv'), good_counts.to_s)
 
     percent = {}
     baseline.each do |k,v|
@@ -97,7 +97,7 @@ module ExTRI
     end
 
     Open.write(file('genes_per_cat.yaml'), good.to_yaml)
-    Open.write(file('counts_per_cat.yaml'), good_counts.to_s)
+    Open.write(file('counts_per_cat.tsv'), good_counts.to_s)
     percent = {}
     baseline.each do |k,v|
       genes = good[k]
