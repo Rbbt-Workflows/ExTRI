@@ -72,7 +72,7 @@ module TFClass
       hier[codes*"."][:children] = []
 
       hier[pre*"."] ||= {}
-      hier[pre*"."][:name] ||= "Missing"
+      hier[pre*"."][:name] ||= pre * "."
       hier[pre*"."][:children] ||= []
       hier[pre*"."][:children] << codes * "."
     end
