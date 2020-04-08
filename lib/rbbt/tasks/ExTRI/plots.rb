@@ -136,7 +136,7 @@ module ExTRI
 
     labels.each do |label|
       orig = label.split(" (e.g.").first
-      tree_text.gsub!(/"#{orig}"/, '"' + label + '"')
+      tree_text.gsub!('"' + orig + '"', '"' + label + '"')
     end
 
     new_tree = {}
