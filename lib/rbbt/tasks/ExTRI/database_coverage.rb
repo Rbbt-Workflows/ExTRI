@@ -262,6 +262,35 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     tsv
   end
 
+  dep :pairs
+  extension :tsv
+  task :filtered_pairs => :tsv do
+    tsv = step(:pairs).load
+    tsv.select("TFClass" => "TFClass")
+
+    confidence = %w(ExTRI HTRI TFacts)
+    presence_fields = tsv.fields.select{|f| f.include? 'present'}
+
+    rejected = []
+    keep = []
+    tsv.through do |k,v|
+      present_db = presence_fields.select{|f| v[f].any? }.collect{|f| f.match(/\[(.*)\]/)[1] }
+
+      low_conf_db = []
+      confidence.each do |db|
+        low_conf_db << db unless v["[#{db}] Confidence"].include? 'High'
+      end
+
+      if (present_db - low_conf_db).empty?
+        rejected << k
+      else
+        keep << k
+      end
+    end
+    
+    tsv.select(keep)
+  end
+
   task :tfcheckpoint_tf_class => :tsv do
     tfclass = TFClass.tfs.list
     tsv = TFCheckpoint.tfs.tsv(:merge => true)
