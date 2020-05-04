@@ -113,7 +113,7 @@ module ExTRI
   
     tsv = step(:ExTRI_confidence).load
 
-    tsv = attach_db tsv, htri, "HTRI"
+    #tsv = attach_db tsv, htri, "HTRI"
     tsv = attach_db tsv, trrust, "TRRUST"
     tsv = attach_db tsv, tfacts, "TFacts"
     #tsv = attach_db tsv, encode, "Encode"
