@@ -1,6 +1,6 @@
 module ExTRI
   #dep :sentence_coverage_NER
-  dep :pairs
+  dep :pairs, :include_HTRI => true
   task :biogateway => :tsv do
     #tsv = step(:sentence_coverage_NER).load
     tsv = step(:pairs).load

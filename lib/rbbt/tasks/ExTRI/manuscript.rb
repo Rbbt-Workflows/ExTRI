@@ -16,8 +16,12 @@ module ExTRI
   end
 
   dep :pairs
-  task :table_pairs_content => :tsv do
+  input :restrict_TFClass, :boolean, "Consider only TFClass", true
+  task :table_pairs_content => :tsv do |restrict_TFClass|
     data = step(:pairs).load
+    Log.tsv data
+    data = data.select("TFClass" => "TFClass") if restrict_TFClass
+    Log.tsv data
     res = TSV.setup({},"Database~TF:TG All,TF:TG HC,TF All,TF HC,TG All,TG HC#:type=:list")
     db_pairs = {}
     hc_db_pairs = {}

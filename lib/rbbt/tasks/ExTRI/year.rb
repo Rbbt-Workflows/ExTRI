@@ -116,10 +116,27 @@ module ExTRI
     step(:database_years).load.R <<-EOF
 rbbt.require('reshape')
 rbbt.require('plyr')
+rbbt.require('dplyr')
 rbbt.require('ggplot2')
 
 m <- rbbt.tsv.melt(data, "Year", "Count")
-g <- ggplot(m, aes(x=Year, y=Count)) + geom_line(aes(group=Database, color=Database)) + theme(axis.text.x  = element_text(angle=90, vjust=0.5, size=16))
+m <- subset(m, Count > 0)
+remove.GEREDB <- subset(m, Database == "GEREDB" & Year==2011 )
+remove.ExTRI <- subset(m, Database == "ExTRI" & Year==2014 )
+m = anti_join(m, remove.GEREDB)
+m = anti_join(m, remove.ExTRI)
+
+years = as.integer(levels(m$Year))
+breaks = pretty(years, length(years) / 2)
+g <- ggplot(m, aes(x=Year, y=Count)) + geom_line(aes(group=Database, color=Database)) + scale_x_discrete(breaks=breaks) + 
+   theme_classic() + 
+   theme(
+        axis.title.y  = element_text(angle=90, vjust=0.5, size=20), 
+        axis.text.y  = element_text(angle=90, vjust=0.5, size=20), 
+        axis.title.x  = element_text(size=20), 
+        axis.text.x  = element_text(angle=90, vjust=0.5, size=20), 
+        legend.title = element_text(size=16), 
+        legend.text = element_text(size=16))
 
 rbbt.png_plot('#{self.tmp_path}', 'plot(g)', height=600, width=800)
 
