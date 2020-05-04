@@ -193,10 +193,11 @@ module ExTRI
       tf, tg = values.values_at(0,1)
       pair = [tf, tg] * ":"
       triplet = [tf, tg, k.split(":").first] * ":"
-      sentence = k.split(":").values_at(0,1) * ":"
+      sentence_id = k.split(":").values_at(0,1) * ":"
+      sentence = values[3]
       pmid_c = pmid_counts[pair] 
       sentence_c = sentence_counts[triplet]
-      sentence_p = sentence_pairs[sentence]
+      sentence_p = sentence_pairs[sentence_id]
       [k, values + [pmid_c, sentence_c, sentence_p, sentence.length, sentence_p.to_f / sentence.length]]
     end
   end
