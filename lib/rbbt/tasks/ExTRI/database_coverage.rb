@@ -84,7 +84,8 @@ module ExTRI
   end
 
   dep :ExTRI_confidence, :test_set => []
-  task :sentence_coverage => :tsv do
+  input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
+  task :sentence_coverage => :tsv do |include_HTRI|
     id_file = Organism.identifiers(ExTRI.organism)
 
     encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
@@ -97,7 +98,8 @@ module ExTRI
 
     tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
-    htri = HTRI.tf_tg.tsv(:merge => true).unzip
+    htri = HTRI.tf_tg.tsv(:merge => true).unzip(0, true)
+    htri = htri.select("Confidence" => "High") unless include_HTRI
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
     thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true).unzip
 
@@ -113,7 +115,7 @@ module ExTRI
   
     tsv = step(:ExTRI_confidence).load
 
-    #tsv = attach_db tsv, htri, "HTRI"
+    tsv = attach_db tsv, htri, "HTRI"
     tsv = attach_db tsv, trrust, "TRRUST"
     tsv = attach_db tsv, tfacts, "TFacts"
     #tsv = attach_db tsv, encode, "Encode"
@@ -136,7 +138,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
   EOF
   dep :ExTRI_confidence, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
   input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold"]
-  input :include_HTRI, :boolean, "Include HTRI", false
+  input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
   task :pairs => :tsv do |confidence,include_HTRI|
     id_file = Organism.identifiers(ExTRI.organism)
 
@@ -154,7 +156,10 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip(0, true)
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip(0, true)
+
     htri = HTRI.tf_tg.tsv(:merge => true).unzip(0, true)
+    htri = htri.select("Confidence" => "High") unless include_HTRI
+
     #thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
     geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"]).unzip(0,true)
@@ -202,8 +207,6 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       [geredb, "GEREDB"],
       #[thomas, "Thomas2015"]
     ].each do |db,name|
-      next if (! include_HTRI && name == "HTRI")
-
       log :adding_db, name
 
       db.key_field = tsv.key_field
