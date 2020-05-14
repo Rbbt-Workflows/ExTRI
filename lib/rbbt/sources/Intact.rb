@@ -4,9 +4,9 @@ require 'rbbt/sources/organism'
 require 'rbbt/sources/uniprot'
 require 'rbbt/sources/PRO'
 
-module Intact
+module IntAct
   extend Resource
-  self.subdir = 'share/databases/Intact'
+  self.subdir = 'share/databases/IntAct'
 
   def self.organism(org="Hsa")
     Organism.default_code(org)
@@ -16,20 +16,20 @@ module Intact
   #self.search_paths[:default] = :lib
 
 
-  Intact.claim Intact.tf_tg, :proc do 
+  IntAct.claim IntAct.tf_tg, :proc do 
 
     uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
-    gene2name = Organism.identifiers(Intact.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    gene2name = Organism.identifiers(IntAct.organism).index :target => "Associated Gene Name", :order => true, :persist => true
 
-    gene2uniHsa = Organism.identifiers(Intact.organism("Hsa")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
-    gene2uniMmu = Organism.identifiers(Intact.organism("Mmu")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
-    gene2uniRno = Organism.identifiers(Intact.organism("Rno")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+    gene2uniHsa = Organism.identifiers(IntAct.organism("Hsa")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+    gene2uniMmu = Organism.identifiers(IntAct.organism("Mmu")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+    gene2uniRno = Organism.identifiers(IntAct.organism("Rno")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
 
     uni2nameHsa = UniProt.identifiers.Hsa.index :target => "Associated Gene Name", :order => true, :persist => true
     #uni2nameMmu = UniProt.identifiers.Mmu.index :target => "Associated Gene Name", :order => true, :persist => true
     #uni2nameRno = UniProt.identifiers.Rno.index :target => "Associated Gene Name", :order => true, :persist => true
 
-    dumper = TSV::Dumper.new :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "PMID", "Method ID"], :type => :double, :namespace => Intact.organism
+    dumper = TSV::Dumper.new :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "PMID", "Method ID"], :type => :double, :namespace => IntAct.organism
     dumper.init
     fields = TSV.parse_header(Rbbt.share.databases.ExTRI.Nov2017_update["Intact"]).fields
     TSV.traverse Rbbt.share.databases.ExTRI.Nov2017_update["Intact"], :into => dumper, :type => :line, :bar => true do |line|
@@ -70,6 +70,6 @@ end
 if __FILE__ == $0
   require 'rbbt/workflow'
   Workflow.require_workflow "ExTRI"
-  iif Intact.tf_tg.produce(true).find
+  iif IntAct.tf_tg.produce(true).find
 end
 

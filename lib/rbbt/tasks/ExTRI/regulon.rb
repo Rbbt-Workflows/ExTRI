@@ -38,7 +38,7 @@ module ExTRI
         sign = nil
       end
 
-      next if not_tf_class.any? and not present.include? "TFacts"
+      next if not_tf_class.any? && ! present.include?("TFactS")
       next unless (present - skip).length >= consensus
       [tf, [tg, sign]]
     end

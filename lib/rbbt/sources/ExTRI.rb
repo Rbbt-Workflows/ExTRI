@@ -143,7 +143,7 @@ module ExTRI
     tsv
   end
 
-  ExTRI.claim ExTRI.Intact, :proc do
+  ExTRI.claim ExTRI.IntAct, :proc do
     mouse_index = Organism.identifiers("Mmu").index(:target => "Entrez Gene ID", :persist => true, :order => true)
     rat_index = Organism.identifiers("Rno").index(:target => "Entrez Gene ID", :persist => true, :order => true)
     human_index = Organism.identifiers(ExTRI.organism("Hsa")).index(:target => "Entrez Gene ID", :persist => true, :order => true)
@@ -185,10 +185,10 @@ module ExTRI
     tsv
   end
 
-  ExTRI.claim ExTRI.TFacts_flagged_articles, :proc do
+  ExTRI.claim ExTRI.TFactS_flagged_articles, :proc do
     threshold = 10
     pmid_counts = {}
-    TSV.traverse TFacts.tf_tg do |tf,values|
+    TSV.traverse TFactS.tf_tg do |tf,values|
       Misc.zip_fields(values).each do |target,sign,species,source,pmids|
         pair = [tf,target] * ":"
         next if pmids.nil? or pmids.empty?

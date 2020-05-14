@@ -10,7 +10,7 @@ module ExTRI
 
   dep :pairs
   input :tf_pair, :select, "Use TF or TF-TG pairs", "TF", :select_options => ["TF", "TF-TG"]
-  input :databases, :array, "Databases to compare", ["ExTRI", "TRRUST", "HTRI", "TFacts", "Intact"]
+  input :databases, :array, "Databases to compare", ["ExTRI", "TRRUST", "HTRI", "TFactS", "IntAct"]
   input :confidence_db, :boolean, "Filter DB entries for high confidence", false
   input :confidence_ExTRI, :boolean, "Filter ExTRI entries for high confidence", false
   input :remove_autoregulation, :boolean, "Filter out ExTRI entries for auto-regulation", false

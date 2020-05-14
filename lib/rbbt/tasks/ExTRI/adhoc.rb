@@ -39,7 +39,7 @@ module ExTRI
   task :DB_signed_overlap => :tsv do
     tsv = step(:sentence_coverage).load
     overlap = tsv.select("[TRRUST] Regulation"){|v| (v.split(";") & %w(Activation Repression)).any?}
-    overlap.merge!(tsv.select("[TFacts] Sign"){|v| (v.split(";") & %w(UP DOWN)).any?})
+    overlap.merge!(tsv.select("[TFactS] Sign"){|v| (v.split(";") & %w(UP DOWN)).any?})
     overlap
   end
 

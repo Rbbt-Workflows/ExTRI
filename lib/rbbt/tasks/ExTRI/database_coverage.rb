@@ -4,7 +4,7 @@ module ExTRI
   NFKB_SYN=%w(NFKB1 NFKB2 RELA RELB)
 
 
-  DATABASES=%w(ExTRI TFacts HTRI Intact GOA TRRUST Signor CytReg GEREDB)
+  DATABASES=%w(ExTRI TFactS HTRI IntAct GOA TRRUST SIGNOR CytReg GEREDB)
 
   helper :normalize_db do |db|
     new = db.annotate({})
@@ -93,10 +93,10 @@ module ExTRI
     #goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
     goa = GO.tf_tg.tsv(:merge => true).unzip
 
-    #intact = ExTRI.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    intact = Intact.tf_tg.tsv(:merge => true).unzip
+    #intact = ExTRI.IntAct.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    intact = IntAct.tf_tg.tsv(:merge => true).unzip
 
-    tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
+    tfacts = TFactS.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
     htri = HTRI.tf_tg.tsv(:merge => true).unzip(0, true)
     htri = htri.select("Confidence" => "High") unless include_HTRI
@@ -107,7 +107,7 @@ module ExTRI
 
     cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
 
-    flagged = ExTRI.TFacts_flagged_articles.list
+    flagged = ExTRI.TFactS_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
       sign,species,source,pmids = values
       (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
@@ -117,11 +117,11 @@ module ExTRI
 
     tsv = attach_db tsv, htri, "HTRI"
     tsv = attach_db tsv, trrust, "TRRUST"
-    tsv = attach_db tsv, tfacts, "TFacts"
+    tsv = attach_db tsv, tfacts, "TFactS"
     #tsv = attach_db tsv, encode, "Encode"
     tsv = attach_db tsv, goa, "GOA"
-    tsv = attach_db tsv, intact, "Intact"
-    tsv = attach_db tsv, signor, "Signor"
+    tsv = attach_db tsv, intact, "IntAct"
+    tsv = attach_db tsv, signor, "SIGNOR"
     tsv = attach_db tsv, geredb, "GEREDB"
     tsv = attach_db tsv, cyt_reg, "CytReg"
     #tsv = attach_db tsv, thomas, "Thomas2015"
@@ -151,10 +151,10 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     #goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
     goa = GO.tf_tg.tsv(:merge => true).unzip
 
-    #intact = ExTRI.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    intact = Intact.tf_tg.tsv(:merge => true).unzip
+    #intact = ExTRI.IntAct.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+    intact = IntAct.tf_tg.tsv(:merge => true).unzip
 
-    tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip(0, true)
+    tfacts = TFactS.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip(0, true)
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip(0, true)
 
     htri = HTRI.tf_tg.tsv(:merge => true).unzip(0, true)
@@ -166,7 +166,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
 
-    flagged = ExTRI.TFacts_flagged_articles.list
+    flagged = ExTRI.TFactS_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
       sign,species,source,pmids = values.collect{|v| v * ";"}
       (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
@@ -198,11 +198,11 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     [
       [htri, "HTRI"],
       [trrust, "TRRUST"],
-      [tfacts, "TFacts"],
+      [tfacts, "TFactS"],
       #[encode, "Encode"], # Don't use Encode
       [goa, "GOA"],
-      [intact, "Intact"],
-      [signor, "Signor"],
+      [intact, "IntAct"],
+      [signor, "SIGNOR"],
       [cyt_reg, "CytReg"],
       [geredb, "GEREDB"],
       #[thomas, "Thomas2015"]
@@ -278,7 +278,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     tsv = step(:pairs).load
     tsv.select("TFClass" => "TFClass")
 
-    confidence = %w(ExTRI HTRI TFacts)
+    confidence = %w(ExTRI HTRI TFactS)
     presence_fields = tsv.fields.select{|f| f.include? 'present'}
 
     rejected = []

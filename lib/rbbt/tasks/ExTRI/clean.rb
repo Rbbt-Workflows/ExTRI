@@ -221,13 +221,13 @@ module ExTRI
 
   #  encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
   #  goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-  #  intact = ExTRI.Intact.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+  #  intact = ExTRI.IntAct.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
 
-  #  tfacts = TFacts.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
+  #  tfacts = TFactS.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
   #  trrust = TRRUST.tf_tg.tsv(:merge => true).unzip
   #  htri = HTRI.tf_tg.tsv(:merge => true).unzip
 
-  #  flagged = ExTRI.TFacts_flagged_articles.list
+  #  flagged = ExTRI.TFactS_flagged_articles.list
   #  tfacts.add_field "Confidence" do |tf,values|
   #    sign,species,source,pmids = values
   #    (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
@@ -237,10 +237,10 @@ module ExTRI
 
   #  tsv = attach_db tsv, htri, "HTRI"
   #  tsv = attach_db tsv, trrust, "TRRUST"
-  #  tsv = attach_db tsv, tfacts, "TFacts"
+  #  tsv = attach_db tsv, tfacts, "TFactS"
   #  tsv = attach_db tsv, encode, "Encode"
   #  tsv = attach_db tsv, goa, "GOA"
-  #  tsv = attach_db tsv, intact, "Intact"
+  #  tsv = attach_db tsv, intact, "IntAct"
 
   #  tsv
   #end
