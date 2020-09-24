@@ -128,7 +128,7 @@ m = anti_join(m, remove.ExTRI)
 
 years = as.integer(levels(m$Year))
 breaks = pretty(years, length(years) / 2)
-g <- ggplot(m, aes(x=Year, y=Count)) + geom_line(aes(group=Database, color=Database)) + scale_x_discrete(breaks=breaks) + 
+g <- ggplot(m, aes(x=Year, y=Count)) + geom_line(aes(group=Database, color=Database, linetype=Database)) + scale_x_discrete(breaks=breaks) + 
    theme_classic() + 
    theme(
         axis.title.y  = element_text(angle=90, vjust=0.5, size=20), 

@@ -148,4 +148,72 @@ module ExTRI
       end.any?
     end.length
   end
+
+  dep :pairs
+  task :quads => :tsv do
+    pairs = step(:pairs).load
+    pairs = pairs.select("[ExTRI] Confidence" => "High")
+    pairs.unnamed = true
+    pairs.monitor = true
+
+    pmid_fields = pairs.fields.select{|f| f.include? "PMID"}
+
+    quads = {}
+    pmid_fields.each do |field|
+      pairs.through :key, [field] do |k,v|
+        pmids = v.flatten.collect{|p| p.split(";")}.flatten.uniq
+        quads[field] ||= []
+        quads[field] += pmids.collect{|p| [k, p] * ":"}
+      end
+    end
+
+    rest = quads.values_at(*(pmid_fields - ['[ExTRI] PMID'])).flatten.uniq
+    extri = quads['[ExTRI] PMID']
+
+    tris_counts = {}
+
+    rest.each do |q|
+      tf, tg, pmid = q.split(":")
+      p = [tf, tg] * ":"
+      tris_counts[p] ||= [[], []]
+      tris_counts[p][0] << pmid
+    end
+
+    extri.each do |q|
+      tf, tg, pmid = q.split(":")
+      p = [tf, tg] * ":"
+      tris_counts[p] ||= [[], []]
+      tris_counts[p][1] << pmid
+    end
+
+    matches = {}
+    miss_matches = {}
+    extri_uniq = {}
+    total = 0
+    tris_counts.each do |p,v|
+      t, e = v
+      next if e.empty?
+      extri_uniq[p] = e if t.empty?
+      next if t.empty?
+      total += 1
+      new = e - t
+      common = t & e
+
+      matches[p] = common if common.any?
+      miss_matches[p] = new if new.any?
+    end
+    
+    iii total
+    iif matches
+    iif miss_matches
+    iif miss_matches.values.flatten
+    iif miss_matches.values.flatten.uniq
+    iif extri_uniq
+    iif extri_uniq.values.flatten
+    iif extri_uniq.values.flatten.uniq
+    iif (miss_matches.values.flatten + extri_uniq.values.flatten)
+    iif (miss_matches.values.flatten + extri_uniq.values.flatten).uniq
+    
+
+  end
 end
