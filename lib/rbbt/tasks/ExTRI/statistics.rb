@@ -317,7 +317,7 @@ module ExTRI
 
   dep :pairs
   input :tf_pair, :select, "Use TF, TG, or TF-TG pairs", "TF", :select_options => ["TF", "TG", "TF-TG"]
-  input :confidence, :boolean, "Filter DB entries for high confidence", false
+  input :use_confidence, :boolean, "Filter DB entries for high confidence", false
   input :remove_autoregulation, :boolean, "Filter out ExTRI entries for auto-regulation", false
   input :remove_non_TFClass, :boolean, "Filter out ExTRI entries for non TFClass TF", false
   task :db_counts => :tsv do |tf_pair,confidence,remove_autoregulation,remove_non_TFClass|
