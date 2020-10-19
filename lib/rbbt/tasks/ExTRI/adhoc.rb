@@ -115,4 +115,53 @@ module ExTRI
     
     res
   end
+
+  dep :ExTRI_confidence
+  task :autoregulation_sentences => :array do
+    TSV.traverse step(:ExTRI_confidence), :type => :array, :into => :stream do |line|
+      pmid, num, tf, tg = line.split("\t").first.split(":")
+      next unless tf == tg
+      line
+    end
+  end
+
+
+
+  task :TFClass_vs_GREEKC => :yaml do |salvage|
+
+    cp = TFCheckpoint.tfs.tsv
+
+    new_cp = cp.annotate({})
+
+    translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    TSV.traverse cp, :into => new_cp do |tf, values|
+      new_tf = translation[tf] 
+      if new_tf.nil?
+        Log.error "Gene name not found from TFCheckpoint: " + tf
+        new_tf = tf
+      end
+      Log.info "TFCheckpoint Translation " << [tf, new_tf] * " => " if tf != new_tf
+      [new_tf, values]
+    end
+
+    cp = new_cp
+
+    tf_class_human = cp.select("TFClass_human"){|v| v.include?("TFclass")}.keys.flatten.uniq.compact
+    tf_class_mouse = cp.select("TFclass_mouse"){|v| v.include?("TFclass_mouse")}.keys.flatten.uniq.compact
+
+    tf_class = (tf_class_human + tf_class_mouse).uniq
+
+    greekc = Rbbt.data["GREEKC_dbTF_QuickGO_catalogue.txt"].read.split("\n")[2..-1].collect{|l| l.split("\t").first}.reject{|e| e.include? "(Top)"}
+
+    {
+      :TFClass_NOT_GO => tf_class - greekc,
+      :GO_NOT_TFClass => greekc - tf_class,
+    }
+  end
+
+  dep :TFClass_vs_GREEKC
+  task :TFClass_vs_GREEKC_text => :text do
+    step(:TFClass_vs_GREEKC).load.collect{|k,v| [k, v * "\n"] * "\n"} * "\n\n" + "\n"
+  end
+
 end

@@ -180,7 +180,7 @@ Both confidence calls are force to Low if the target gene is a signal transducti
     signal_transd = Rbbt.data["signal_transd.list"].list
 
     tsv = step(:ExTRI_counts).load
-    tsv.with_monitor do
+
     tsv.add_field "Prediction confidence" do |k,v|
       tg = v["Target Gene (Associated Gene Name)"]
       if signal_transd.include? tg
@@ -200,6 +200,9 @@ Both confidence calls are force to Low if the target gene is a signal transducti
         thresholded.include?(k) ? "High" : "Low"
       end
     end
+
+    tsv.add_field "Auto-regulation" do |pair,values|
+      (values[0] == values[1]) ? "Auto-regulation" : ""
     end
 
     tsv
