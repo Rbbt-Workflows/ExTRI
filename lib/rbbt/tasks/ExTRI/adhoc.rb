@@ -164,4 +164,33 @@ module ExTRI
     step(:TFClass_vs_GREEKC).load.collect{|k,v| [k, v * "\n"] * "\n"} * "\n\n" + "\n"
   end
 
+  dep :ExTRI_confidence
+  task :TFs_over_5 => :array do
+    tsv = step(:ExTRI_confidence).load
+    tsv = tsv.select("Auto-regulation" => "")
+    tsv = tsv.select("Prediction confidence" => "High")
+
+    abs = {}
+    TSV.traverse tsv, :type => :array do |line|
+      pmid,sent,tf,tg = line.split("\t").first.split(":")
+      
+      abs[tf] ||= Set.new
+      abs[tf] << pmid
+    end
+
+    abs.select{|tf,list| list.length >= 5}.collect{|tf,list| tf}
+  end
+
+  dep :ExTRI_confidence
+  input :list, :tsv, "Pairs to process"
+  task :filter_sentences => :tsv do |list|
+    pairs = list.collect{|k,v| [k,v].flatten.compact.reject{|e| e.empty? } * ":"}
+    TSV.traverse step(:ExTRI_confidence), :type => :array, :into => :stream do |line|
+      next line if line =~ /^#/
+      pair = line.split("\t").first.split(":").values_at(2,3) * ":"
+      next unless pairs.include?(pair)
+      line
+    end
+  end
+
 end
