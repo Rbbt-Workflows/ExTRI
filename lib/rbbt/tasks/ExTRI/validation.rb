@@ -113,6 +113,19 @@ module ExTRI
     validation
   end
 
+  dep :aug_validation_dataset
+  task :liv_validation => :tsv do
+    validation_dataset = step(:aug_validation_dataset).load
+    validation_liv = TSV.excel(Rbbt.data["Astrid and Liv validation"]["curated_sentences_compiled_270121.xlsx"].find, :type => :list)
+
+    validation_liv.through do |k,values|
+      val = values["evaluation"] == 'v'
+      validation_dataset[k] = val ? "Valid" : "Not Valid"
+    end
+
+    validation_dataset
+  end
+
   #{{{ Prediction model
 
   dep :aug_validation_dataset
