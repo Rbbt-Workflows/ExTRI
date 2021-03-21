@@ -45,14 +45,15 @@ module ExTRI
     hashes.to_json
   end
 
-  dep :ExTRI_clean
-  task :greco_format => :text do 
-    tsv = step(:validation_dataset).load.select("Valid" => "Valid")
-    fixed = step(:ExTRI_clean).load
+  dep :ExTRI_confidence
+  task :europePMC_format => :text do 
+    fixed = step(:ExTRI_confidence).load
+
+    hc = fixed.select("Prediction confidence" => "High")
 
     name2ens = Organism.identifiers("Hsa/feb2014").index :persist => true
     hashes = []
-    tsv.through do |pair,values|
+    hc.through do |pair,values|
       next unless fixed.include? pair
       sentence = fixed[pair]["Sentence"]
       pmid, n, tf, tg = pair.split(":")
@@ -68,8 +69,9 @@ module ExTRI
       
       
       hashes << {
-        "ext_id": pmid, #pmid
-        "provider": "ExTRI", 
+        "src": "MED",
+        "id": pmid,
+        "provider": "FNL", 
         "anns": [
           {
             "exact": sentence,
@@ -85,7 +87,11 @@ module ExTRI
       }
     end
 
+    Misc.ordered_divide(hashes, 10_000).each_with_index do |chunk,i|
+      Open.write(file("ExTRI_HC_#{Time.now.to_date}_chunk_" + i.to_s), chunk.collect{|h| h.to_json } * "\n")
+    end
 
-    hashes.to_json
+
+    hashes.collect{|h| h.to_json} * "\n"
   end
 end

@@ -167,12 +167,12 @@ module ExTRI
   dep :ExTRI_confidence
   task :TFs_over_5 => :array do
     tsv = step(:ExTRI_confidence).load
-    tsv = tsv.select("Auto-regulation" => "")
     tsv = tsv.select("Prediction confidence" => "High")
 
     abs = {}
     TSV.traverse tsv, :type => :array do |line|
       pmid,sent,tf,tg = line.split("\t").first.split(":")
+      next if tf == tg
       
       abs[tf] ||= Set.new
       abs[tf] << pmid
@@ -180,6 +180,29 @@ module ExTRI
 
     abs.select{|tf,list| list.length >= 5}.collect{|tf,list| tf}
   end
+
+  dep :ExTRI_confidence
+  task :TFs_pmid_counts => :tsv do
+    tsv = step(:ExTRI_confidence).load
+    tsv = tsv.select("Prediction confidence" => "High")
+
+    pmids = TSV.setup({}, "TF~PMID#:type=:flat")
+
+    TSV.traverse tsv, :type => :array do |line|
+      pmid,sent,tf,tg = line.split("\t").first.split(":")
+      next if tf == tg
+      
+      pmids[tf] ||= []
+      pmids[tf] << pmid
+    end
+
+    counts = TSV.setup({}, "TF~PMID Counts#:type=:single#:cast=:to_f")
+    pmids.each do |tf,pmids|
+      counts[tf] = pmids.uniq.length
+    end
+    counts
+  end
+
 
   dep :ExTRI_confidence
   input :list, :tsv, "Pairs to process"
