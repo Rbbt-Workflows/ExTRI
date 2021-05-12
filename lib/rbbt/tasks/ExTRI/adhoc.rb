@@ -225,8 +225,11 @@ The rules are writen one line at a time, each with 5 fields separated by comma
 (',', no spaces). The fields are: (1) TF and (2) TG the protein to match as TF
 or TG, only specify one and leave the other empty, (3) text that needs to be in
 the sentence to be a match, (4) text that cannot be on the sentence to be a
-match, (5) force it to be a match if the name of the protein appears verbatim
-in the text (i.e. not an alias). The fields has and hasnot are regular expression (will go inside bars, like /<has>/) 
+match, (5) force it to not be a match if the name of the protein appears
+verbatim in the text (i.e. not an alias). The fields 'has' and 'hasnot' only
+match words, and can be regular expression (will go inside bars, like /<has>/).
+A sentence matching a rule is removed.
+
   EOF
   task :TEST_postprocess => :tsv do |rules| 
 
