@@ -233,6 +233,7 @@ in the text (i.e. not an alias). The fields has and hasnot are regular expressio
     tsv = step(:ExTRI_clean).load 
 
     rules.split("\n").each do |line|
+      next if line =~ /^#/
 
       rtf, rtg, has, hasnot, exact = line.split(",").collect{|v| v.empty? ? nil : v.strip}
 
