@@ -241,7 +241,7 @@ in the text (i.e. not an alias). The fields has and hasnot are regular expressio
 
       tsv, rejects = ExTRI.apply_postprocessing_rule(tsv, rtf, rtg, has, hasnot, exact)
 
-      Open.write(file(gene), rejects * "\n")
+      Open.write(file(gene) + '.tsv', rejects * "\n")
       log gene, "Removed #{gene}. Has: '#{has}'; has not: '#{hasnot}'; rescue exact HGNC: '#{exact}' - #{rejects.length} removed"
 
     end
