@@ -216,4 +216,35 @@ module ExTRI
     end
   end
 
+  dep :ExTRI_clean
+  input :rules, :text, "Post-processing rule: <tf>,<tg>,<has>,<hasnot>,<exact>"
+  desc <<-EOF
+Test a post-processing rule.
+
+The rules are writen one line at a time, each with 5 fields separated by comma
+(',', no spaces). The fields are: (1) TF and (2) TG the protein to match as TF
+or TG, only specify one and leave the other empty, (3) text that needs to be in
+the sentence to be a match, (4) text that cannot be on the sentence to be a
+match, (5) force it to be a match if the name of the protein appears verbatim
+in the text (i.e. not an alias). The fields has and hasnot are regular expression (will go inside bars, like /<has>/) 
+  EOF
+  task :TEST_postprocess => :tsv do |rules| 
+
+    tsv = step(:ExTRI_clean).load 
+
+    rules.split("\n").each do |line|
+
+      rtf, rtg, has, hasnot, exact = line.split(",").collect{|v| v.empty? ? nil : v.strip}
+
+      gene = [rtf,rtg].compact.first
+
+      tsv, rejects = ExTRI.apply_postprocessing_rule(tsv, rtf, rtg, has, hasnot, exact)
+
+      Open.write(file(gene), rejects * "\n")
+      log gene, "Removed #{gene}. Has: '#{has}'; has not: '#{hasnot}'; rescue exact HGNC: '#{exact}' - #{rejects.length} removed"
+
+    end
+
+    tsv
+  end
 end

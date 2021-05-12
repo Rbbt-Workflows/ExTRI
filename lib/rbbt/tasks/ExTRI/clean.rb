@@ -1,5 +1,59 @@
 module ExTRI
 
+
+  def self.sentence_contains(sentence, pattern)
+    parts = pattern.split(/[&!]/)
+    matches = parts.collect do |part|
+      sent = part.downcase == part ? sentence.downcase : sentence
+      if part =~ /^\w+$/
+        sent.split(/[^\w]/).include? part
+      else
+        sent =~ /\W#{part}\W/i
+      end
+    end
+    if pattern.include? "&"
+      matches.inject(true){|acc,e| acc = acc && e}
+    elsif pattern.include? "|"
+      matches.inject(false){|acc,e| acc = acc || e}
+    else
+      matches.first
+    end
+  end
+
+  def self.apply_postprocessing_rule(tsv, rtf, rtg, has, hasnot, exact)
+
+    rejects = []
+
+    tsv = tsv.select do |k,v|
+      tf, tg, *rest = v
+      sentence = v["Sentence"]
+
+      reject = false
+      if (rtf and tf =~ /^#{rtf}$/) or (rtg and tg =~ /^#{rtg}$/)
+        if has 
+          reject = true if sentence_contains(sentence, has)
+        else
+          reject = true
+        end
+
+        if hasnot
+          reject = false if sentence_contains(sentence, hasnot)
+        end
+
+        if exact == 'true'
+          reject = false if rtf && sentence_contains(sentence, rtf)
+          reject = false if rtg && sentence_contains(sentence, rtg)
+        end
+
+      end
+
+      rejects << [k, v].flatten * "\t" if reject
+      ! reject
+    end
+
+    [tsv, rejects]
+  end
+
   input :salvage, :boolean, "Salvage some non-TFClass TFs", false
   task :flagged_tfs_TFCheckpoint => :array do |salvage|
 
@@ -85,24 +139,6 @@ module ExTRI
   end
 
 
-  helper :sentence_contains do |sentence,pattern|
-    parts = pattern.split(/[&!]/)
-    matches = parts.collect do |part|
-      sent = part.downcase == part ? sentence.downcase : sentence
-      if part =~ /^\w+$/
-        sent.split(/[^\w]/).include? part
-      else
-        sent =~ /\W#{part}\W/i
-      end
-    end
-    if pattern.include? "&"
-      matches.inject(true){|acc,e| acc = acc && e}
-    elsif pattern.include? "|"
-      matches.inject(false){|acc,e| acc = acc || e}
-    else
-      matches.first
-    end
-  end
 
   dep :ExTRI_clean
   task :ExTRI_postprocess => :tsv do
@@ -110,36 +146,12 @@ module ExTRI
 
     TSV.traverse Rbbt.root.data["post_process_rules.tsv"].find(:lib), :type => :array do |line|
       next if line =~ /^#/
-      rtf,rtg,has,hasnot,exact = line.split(",").collect{|v| v.empty? ? nil : v}
+
+      rtf, rtg, has, hasnot, exact = line.split(",").collect{|v| v.empty? ? nil : v}
 
       gene = [rtf,rtg].compact.first
 
-      rejects = []
-
-      tsv = tsv.select do |k,v|
-        tf, tg, *rest = v
-        sentence = v["Sentence"]
-
-        reject = false
-        if (rtf and tf =~ /^#{rtf}$/) or (rtg and tg =~ /^#{rtg}$/)
-          if has 
-            reject = true if sentence_contains(sentence, has)
-          else
-            reject = true
-          end
-
-          if hasnot
-            reject = false if sentence_contains(sentence, hasnot)
-          end
-
-          if exact == 'true'
-            reject = false if sentence_contains(sentence, gene)
-          end
-        end
-
-        rejects << [k, v].flatten * "\t" if reject
-        ! reject
-      end
+      tsv, rejects = ExTRI.apply_postprocessing_rule(tsv, rtf, rtg, has, hasnot, exact)
 
       Open.write(file(gene), rejects * "\n")
       log gene, "Removed #{gene}. Has: '#{has}'; has not: '#{hasnot}'; rescue exact HGNC: '#{exact}' - #{rejects.length} removed"
