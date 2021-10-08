@@ -164,6 +164,8 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
     geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"]).unzip(0,true)
 
+    ntnu_curated = ExTRI.NTNU_curated.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :merge => true, :type => :double).unzip(0,true)
+
     cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
 
     flagged = ExTRI.TFactS_flagged_articles.list
@@ -205,6 +207,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       [signor, "SIGNOR"],
       [cyt_reg, "CytReg"],
       [geredb, "GEREDB"],
+      [ntnu_curated, "NTNU Curated"],
       #[thomas, "Thomas2015"]
     ].each do |db,name|
       log :adding_db, name
@@ -308,4 +311,20 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       (tfclass.include? tf) ? "TFClass new" : ""
     end
   end
+
+  dep :ExTRI_confidence, :test_set => []
+  dep :pairs
+  task :ExTRI_coverage => :tsv do |include_HTRI|
+    tsv = step(:ExTRI_confidence).load
+
+    tsv.add_field "Pair" do |k,values|
+      k.split(":").values_at(2,3) * ":"
+    end
+
+    pairs = step(:pairs).load
+    good_fields = pairs.fields.reject{|f| f.include? "ExTRI" }
+
+    tsv.attach pairs.slice(good_fields)
+  end
+
 end

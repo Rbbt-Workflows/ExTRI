@@ -2,6 +2,7 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
  workflow.rb
  bin=bin{
   add_small_scale_experiment.rb
+  count_evidence.py
  }
  doc=doc filter="*"{
   Treminer.txt

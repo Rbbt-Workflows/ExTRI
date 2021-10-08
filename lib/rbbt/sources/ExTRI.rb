@@ -236,6 +236,30 @@ module ExTRI
     new
   end
 
+  ExTRI.claim ExTRI.NTNU_curated, :proc do
+    dumper = TSV::Dumper.new :key_field => "TRI", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Sign", "PMID"], :type => :list
+    dumper.init
+    TSV.traverse Rbbt.data["ExTRI_curated.tsv"], :type => :list, :into => dumper do |tri,values|
+      valid, sign, negated, *rest = values
+      pmid, number, tf, tg = tri.split(":")
+
+      sign = case sign
+             when "+"
+               "UP"
+             when "-"
+               "DOWN"
+             else
+               ""
+             end
+
+      next if negated == "true" && sign == ""
+
+      sign = "" if negated == "true"
+
+      [tri, [tf, tg, sign, pmid]]
+    end
+  end
+
 end
 
 
