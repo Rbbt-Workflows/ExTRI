@@ -6,7 +6,10 @@ module ExTRI
     matches = parts.collect do |part|
       sent = part.downcase == part ? sentence.downcase : sentence
       if part =~ /^\w+$/
-        sent.split(/[^\w]/).include? part
+        sent.split(/[^\w]/).include?(part)
+      elsif part[0] == "/"
+        re = Regexp.try_convert(part)
+        re.match(sent)
       else
         sent =~ /\W#{part}\W/i
       end
@@ -148,6 +151,19 @@ module ExTRI
       next if line =~ /^#/
 
       rtf, rtg, has, hasnot, exact = line.split(",").collect{|v| v.empty? ? nil : v}
+
+      gene = [rtf,rtg].compact.first
+
+      tsv, rejects = ExTRI.apply_postprocessing_rule(tsv, rtf, rtg, has, hasnot, exact)
+
+      Open.write(file(gene), rejects * "\n")
+      log gene, "Removed #{gene}. Has: '#{has}'; has not: '#{hasnot}'; rescue exact HGNC: '#{exact}' - #{rejects.length} removed"
+    end
+
+    TSV.traverse Rbbt.root.data["post_process_rules-2.tsv"].find(:lib), :type => :array do |line|
+      next if line =~ /^TF/
+
+      rtf, rtg, has, hasnot, exact = line.split("\t").collect{|v| v.empty? ? nil : v}
 
       gene = [rtf,rtg].compact.first
 
