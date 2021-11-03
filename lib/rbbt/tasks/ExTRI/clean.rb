@@ -23,6 +23,10 @@ module ExTRI
     end
   end
 
+  def self.to_firstcase(text)
+    text[0].upcase + text[1..-1].downcase
+  end
+
   def self.apply_postprocessing_rule(tsv, rtf, rtg, has, hasnot, exact)
 
     rejects = []
@@ -46,6 +50,12 @@ module ExTRI
         if exact == 'true'
           reject = false if rtf && sentence_contains(sentence, rtf)
           reject = false if rtg && sentence_contains(sentence, rtg)
+        elsif exact == 'nocase'
+          reject = false if rtf && sentence_contains(sentence.downcase, rtf.downcase)
+          reject = false if rtg && sentence_contains(sentence.downcase, rtg.downcase)
+        elsif exact == 'firstcase'
+          reject = false if rtf && sentence_contains(sentence, to_firstcase(rtf))
+          reject = false if rtg && sentence_contains(sentence, to_firstcase(rtg))
         end
 
       end
