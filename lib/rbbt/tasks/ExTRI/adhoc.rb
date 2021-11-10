@@ -249,6 +249,11 @@ A sentence matching a rule is removed.
 
     end
 
+    excel_file = file('removed.xlsx')
+    Path.setup(files_dir).glob("*.tsv").each do |tsvfile|
+      TSV.open(tsvfile).xlsx(excel_file, :sheet => File.basename(tsvfile, '.tsv'), :add_sheet => true)
+    end
+
     tsv
   end
 end
