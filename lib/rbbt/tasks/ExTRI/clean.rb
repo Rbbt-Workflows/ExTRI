@@ -54,10 +54,11 @@ module ExTRI
           reject = false if rtf && sentence_contains(sentence.downcase, rtf.downcase)
           reject = false if rtg && sentence_contains(sentence.downcase, rtg.downcase)
         elsif exact == 'firstcase'
+          reject = false if rtf && sentence_contains(sentence, rtf)
+          reject = false if rtg && sentence_contains(sentence, rtg)
           reject = false if rtf && sentence_contains(sentence, to_firstcase(rtf))
           reject = false if rtg && sentence_contains(sentence, to_firstcase(rtg))
         end
-
       end
 
       rejects << [k, v].flatten * "\t" if reject
