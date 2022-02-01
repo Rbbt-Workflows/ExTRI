@@ -83,7 +83,7 @@ module ExTRI
     end
   end
 
-  dep :ExTRI_confidence, :test_set => []
+  dep :ExTRI_final, :test_set => []
   input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
   task :sentence_coverage => :tsv do |include_HTRI|
     id_file = Organism.identifiers(ExTRI.organism)
@@ -113,7 +113,7 @@ module ExTRI
       (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
     end
   
-    tsv = step(:ExTRI_confidence).load
+    tsv = step(:ExTRI_final).load
 
     tsv = attach_db tsv, htri, "HTRI"
     tsv = attach_db tsv, trrust, "TRRUST"
@@ -136,13 +136,13 @@ List all TF:TG pairs across ExTRI and other resources along with confidence esti
 The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences or a score over 1.6.
 
   EOF
-  dep :ExTRI_confidence, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
+  dep :ExTRI_final, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
   input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold"]
   input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
   task :pairs => :tsv do |confidence,include_HTRI|
     id_file = Organism.identifiers(ExTRI.organism)
 
-    orig = step(:ExTRI_confidence).load
+    orig = step(:ExTRI_final).load
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip(0, true)
 
     pavlidis = Pavlidis.tf_tg.tsv(:merge => true)
@@ -166,7 +166,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
     geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"]).unzip(0,true)
 
-    ntnu_curated = ExTRI.NTNU_curated.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :merge => true, :type => :double).unzip(0,true)
+    ntnu_curated = ExTRI.NTNU_Curated.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :merge => true, :type => :double).unzip(0,true)
 
     cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
 
@@ -280,6 +280,20 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
   end
 
   dep :pairs
+  task :pairs_final => :tsv do
+    tsv = step(:pairs).load
+    categories = Rbbt.root.data["TFs_compExTRI_categorized_260122.tsv"].tsv :type => :single, :fields => %w(category)
+    tsv.add_field "TF Category" do |pair,values|
+      tf = pair.split(":").first
+      category = categories[tf]
+      category = "none" if category.nil?
+      category.to_s.sub("_putative", "")
+    end
+
+    tsv.select({"TF Category" => "none"}, true)
+  end
+
+  dep :pairs
   extension :tsv
   task :filtered_pairs => :tsv do
     tsv = step(:pairs).load
@@ -316,10 +330,10 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     end
   end
 
-  dep :ExTRI_confidence, :test_set => []
+  dep :ExTRI_final, :test_set => []
   dep :pairs
   task :ExTRI_coverage => :tsv do |include_HTRI|
-    tsv = step(:ExTRI_confidence).load
+    tsv = step(:ExTRI_final).load
 
     tsv.add_field "Pair" do |k,values|
       k.split(":").values_at(2,3) * ":"

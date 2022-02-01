@@ -152,8 +152,6 @@ module ExTRI
     Misc.sort_stream(dumper.stream)
   end
 
-
-
   dep :ExTRI_clean
   task :ExTRI_postprocess => :tsv do
     tsv = step(:ExTRI_clean).load

@@ -247,6 +247,12 @@ Assigns confidence for every ExTRI triplet (TF:TG:PMID) based on the best confid
     res
   end
 
+  dep :ExTRI_confidence
+  task :ExTRI_final => :tsv do
+    invalid = Rbbt.root.data["NTNU_invalid"].list
+    step(:ExTRI_confidence).load.select(invalid, true)
+  end
+
 
   #dep :validation_dataset
   #dep :sentence_coverage_full_NER_counts
