@@ -218,6 +218,14 @@ Both confidence calls are force to Low if the target gene is a signal transducti
       (values[0] == values[1]) ? "Auto-regulation" : ""
     end
 
+    tsv.process "Prediction confidence" do |v,k,l|
+      if l["Auto-regulation"] == "Auto-regulation"
+        "Low"
+      else
+        v
+      end
+    end
+
     tsv
   end
 
