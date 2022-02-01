@@ -210,6 +210,34 @@ module ExTRI
     tsv 
   end
 
+  dep :validation_dataset
+  dep :ExTRI_confidence
+  task :ExTRI_accuracy => :yaml do
+    extri = step(:ExTRI_confidence).load
+    validation = step(:validation_dataset)
 
+    all = 0
+    good = 0
+    all_hq = 0
+    hq_good = 0
 
+    TSV.traverse validation do |tri, values,fields|
+      NamedArray.setup(values, fields)
+      valid = values["Valid"] == "Valid"
+
+      next if extri[tri].nil?
+      hq = extri[tri]["Prediction confidence"] == "High"
+
+      all += 1
+
+      good += 1 if valid 
+      all_hq += 1 if hq
+      hq_good += 1 if hq && valid
+    end
+
+    R.eval 'rbbt.require("Hmisc")' 
+    res = R.eval_a "binconf(x=#{good}, n=#{all})" 
+
+    Hash[*%w(proportion lower higher).zip(res).flatten]
+  end
 end

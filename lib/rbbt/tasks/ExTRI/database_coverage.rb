@@ -145,6 +145,8 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     orig = step(:ExTRI_confidence).load
     signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip(0, true)
 
+    pavlidis = Pavlidis.tf_tg.tsv(:merge => true)
+    pavlidis = pavlidis.unzip(0, true)
 
     encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
 
@@ -197,6 +199,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       "ExTRI"
     end
 
+
     [
       [htri, "HTRI"],
       [trrust, "TRRUST"],
@@ -208,6 +211,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       [cyt_reg, "CytReg"],
       [geredb, "GEREDB"],
       [ntnu_curated, "NTNU Curated"],
+      [pavlidis, "Pavlidis2021"]
       #[thomas, "Thomas2015"]
     ].each do |db,name|
       log :adding_db, name

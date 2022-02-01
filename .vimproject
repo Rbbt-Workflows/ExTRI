@@ -20,6 +20,7 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    TRRUST.rb
    GEREDB.rb
    CytReg.rb
+   Pavlidis.rb
   }
   knowledge_base=rbbt/knowledge_base{
    ExTRI.rb
@@ -56,12 +57,17 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
  data=data filter="*"{
   Catalogues_2012-08-09_UTF8.txt
   Encode
+  ExTRI_curated.tsv
   GOA
-  pmids2year_all.txt
-  post_process_rules.tsv
-  hdacs_etc.list
-  signal_transd.list
+  GREEKC_dbTF_QuickGO_catalogue.txt
+  TFClass.json
   hdacs.list
+  hdacs_etc.list
+  pmids2year_all.txt
+  post_process_rules-2.tsv
+  post_process_rules-3.tsv
+  post_process_rules.tsv
+  signal_transd.list
   TFclass_extended=TFclass_extended{
    Include_non_TFClass_300317.tsv
    salvage
@@ -69,7 +75,7 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
   Astrid Validation="Astrid Validation"{
    Consensus_280717_extended_data_v3.xlsx - consensus.tsv
    explanation.tsv
-   validation_384_high-confidence_FNL_July_2017.xlsx - validation_July_2017.tsv
+   validation_384_high-confidence_ExTRI_July_2017.xlsx - validation_July_2017.tsv
    validation_sample_lowscore_290317.tsv
    validation_sample_pmids_280317_AL_124-labels.tsv
    validation_samples_260317.tsv

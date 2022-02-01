@@ -14,6 +14,7 @@ require 'rbbt/sources/Intact'
 require 'rbbt/sources/uniprot'
 require 'rbbt/sources/CytReg'
 require 'rbbt/sources/GEREDB'
+require 'rbbt/sources/Pavlidis'
 
 Workflow.require_workflow "Appris"
 module ExTRI

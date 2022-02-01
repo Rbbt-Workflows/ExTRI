@@ -216,7 +216,7 @@ module ExTRI
     end
   end
 
-  dep :ExTRI_clean
+  dep :ExTRI_clean, :jobname => 'Default'
   input :rules, :text, "Post-processing rule: <tf>,<tg>,<has>,<hasnot>,<exact>"
   desc <<-EOF
 Test a post-processing rule.
