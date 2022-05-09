@@ -107,7 +107,3 @@ Mode of action
   end
 
 end
-
-Log.severity = 0
-iif Pavlidis.tf_tg.produce(true).find if __FILE__ == $0
-
