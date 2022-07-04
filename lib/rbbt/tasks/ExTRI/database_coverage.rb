@@ -85,7 +85,7 @@ module ExTRI
 
   dep :ExTRI_final, :test_set => []
   input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
-  task :sentence_coverage => :tsv do |include_HTRI|
+  task :sentence_coverage_old => :tsv do |include_HTRI|
     id_file = Organism.identifiers(ExTRI.organism)
 
     encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
@@ -291,6 +291,18 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     end
 
     tsv.select({"TF Category" => "none"}, true)
+  end
+
+  dep :ExTRI_final
+  dep :pairs_final
+  task :sentence_coverage => :tsv do 
+    extri = step(:ExTRI_final).path.tsv :type => :double
+
+    extri.add_field "TF:TG" do |k,values|
+      k.split(":").values_at(2,3) * ":"
+    end
+
+    extri.attach step(:pairs_final)
   end
 
   dep :pairs
