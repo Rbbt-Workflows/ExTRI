@@ -54,8 +54,8 @@ module GO
 
   #  tsv
   #end
-  GO.claim GO.tf_tg, :proc do 
-    tsv = TSV.setup({}, :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign"], :type => :double, :namespace => ExTRI.organism)
+  GO.claim GO.tf_tg_old, :proc do 
+    tsv = TSV.setup({}, :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :type => :double, :namespace => ExTRI.organism)
 
     uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
     uni2name = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :persist => true
@@ -92,10 +92,86 @@ module GO
 
     tsv.remove_duplicates.to_s
   end
+
+  GO.claim GO.tf_tg, :proc do 
+    tsv = TSV.setup({}, :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :type => :double, :namespace => ExTRI.organism)
+
+    go_terms = Rbbt.share.databases.ExTRI.Feb2023_update.GO.GO_terms.tsv :type => :list
+
+    uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
+    uni2name = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :persist => true
+    gene2uniHsa = Organism.identifiers(IntAct.organism("Hsa")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+    gene2uniMmu = Organism.identifiers(IntAct.organism("Mmu")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+    gene2uniRno = Organism.identifiers(IntAct.organism("Rno")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+
+    bad_go =<<~EOF.split("\n").collect{|g| g.strip}
+    GO:0032792
+    GO:0043433
+    GO:0032088
+    GO:2000825
+    GO:0051091
+    GO:0051092
+    GO:0051090
+    GO:0023019
+    EOF
+
+    TSV.traverse Rbbt.share.databases.ExTRI.Feb2023_update.GO["TRI_from_GO_human-mouse-rat_200223.tsv"], :type => :list, :into => tsv do |k,values,fields|
+      NamedArray.setup(values, fields)
+
+      tf = values["SYMBOL"]
+      uni = gene2uniHsa[tf] || gene2uniMmu[tf] || gene2uniRno[tf]
+      uni_ids = [uni] + (uni_equivalences[uni] || [])
+      tf = uni2name.values_at(*uni_ids).flatten.compact.first
+      next if tf.nil?
+
+      pmid = values["REFERENCE"].split(/[,|]/).collect do |p|
+        next unless p.include? "PMID"
+        p.split(":").last
+      end
+
+      tgs_codes = values["ANNOTATION EXTENSION"].split(/[,|]/)
+      tgs = tgs_codes.collect do |code|
+        type = code.split("(").first
+        fid = code.match(/\((.*)\)/)[1]
+        next unless %w(regulates_expression_of has_input).include? type
+        ftype, id = fid.split(":")
+        name = case ftype.to_s
+               when "UniProtKB"
+                 uni_ids = [id] + (uni_equivalences[id] || [])
+                 uni2name.values_at(*uni_ids).flatten.compact.first
+               when "NCBI_Gene"
+                 uni = gene2uniHsa[id] || gene2uniMmu[id] || gene2uniRno[id]
+                 uni_ids = [uni] + (uni_equivalences[uni] || [])
+                 uni2name.values_at(*uni_ids).flatten.compact.first
+               when "ENSEMBL"
+                 uni = gene2uniHsa[id] || gene2uniMmu[id] || gene2uniRno[id]
+                 uni_ids = [uni] + (uni_equivalences[uni] || [])
+                 uni2name.values_at(*uni_ids).flatten.compact.first
+               when "RNAcentral", "PR" ,"GO", "InterPro", "CHEBI"
+                 next
+               else
+                 raise ftype
+               end
+      end.compact
+
+      next if tgs.empty?
+
+      go = values["GO TERM"]
+      next if bad_go.include? go
+      sign = go_terms[go]['act'] == 'x' ? 
+        'UP' :
+        (go_terms[go]['repr'] == 'x' ? 'DOWN' : 'Unknown')
+
+      [tf, [tgs, [sign] * tgs.length , [pmid] * tgs.length]]
+    end
+
+    tsv
+  end
 end
 
 if __FILE__ == $0
   require 'rbbt/workflow'
+  Log.severity = 0
   Workflow.require_workflow "ExTRI"
   iii GO.tf_tg.produce(true).find
 end

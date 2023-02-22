@@ -21,6 +21,7 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    GEREDB.rb
    CytReg.rb
    Pavlidis.rb
+   Dorothea.rb
   }
   knowledge_base=rbbt/knowledge_base{
    ExTRI.rb
@@ -52,6 +53,8 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    adhoc.rb
 
    manuscript.rb
+
+   rename.rb
   }
  }
  data=data filter="*"{
@@ -60,12 +63,16 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
   ExTRI_curated.tsv
   GOA
   GREEKC_dbTF_QuickGO_catalogue.txt
+  NTNU_invalid
   TFClass.json
+  TFs_compExTRI_categorized_260122.tsv
   hdacs.list
   hdacs_etc.list
   pmids2year_all.txt
   post_process_rules-2.tsv
   post_process_rules-3.tsv
+  post_process_rules-4.tsv
+  post_process_rules-5.tsv
   post_process_rules.tsv
   signal_transd.list
   TFclass_extended=TFclass_extended{

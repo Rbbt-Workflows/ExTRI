@@ -150,7 +150,8 @@ module ExTRI
     valid_keys = validation.select("Valid" => "Valid").keys
 
     require 'rbbt/util/R'
-    train = full.select(all_validation_keys).attach validation, :fields => ["Valid"]
+    train = full.select(all_validation_keys)
+    train.attach validation, :fields => ["Valid"]
     Open.write(file('train'), train.to_s)
     data = nil
     TmpFile.with_file do |file|

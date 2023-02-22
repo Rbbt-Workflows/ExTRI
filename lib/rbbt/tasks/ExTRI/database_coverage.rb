@@ -1,4 +1,5 @@
 require 'rbbt/sources/TFClass'
+require 'rbbt/sources/Dorothea'
 module ExTRI
   AP1_SYN=%w(FOS FOSB JUN JUNB JUND FOSL1 FOSL2)
   NFKB_SYN=%w(NFKB1 NFKB2 RELA RELB)
@@ -170,6 +171,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
 
+    dorotheaA = Dorothea.tf_tg.tsv(:merge => true).unzip(0, true)
     flagged = ExTRI.TFactS_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
       sign,species,source,pmids = values.collect{|v| v * ";"}
@@ -211,7 +213,8 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       [cyt_reg, "CytReg"],
       [geredb, "GEREDB"],
       [ntnu_curated, "NTNU Curated"],
-      [pavlidis, "Pavlidis2021"]
+      [pavlidis, "Pavlidis2021"],
+      [dorotheaA, "DoRothEA_A"]
       #[thomas, "Thomas2015"]
     ].each do |db,name|
       log :adding_db, name
@@ -280,7 +283,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
   end
 
   dep :pairs
-  task :pairs_final => :tsv do
+  task :pairs_final_old => :tsv do
     tsv = step(:pairs).load
     categories = Rbbt.root.data["TFs_compExTRI_categorized_260122.tsv"].tsv :type => :single, :fields => %w(category)
     tsv.add_field "TF Category" do |pair,values|
@@ -292,6 +295,35 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     tsv.select({"TF Category" => "none"}, true)
   end
+
+  dep :pairs
+  task :pairs_final => :tsv do
+    tsv = step(:pairs).load
+    tfc2 = Rbbt.root.data["TFC2_master_24012023.tsv"].tsv :type => :list, :fields => %w(lambert_2018.present TFclass_human TFclass_mouse TFclass_rat Lovering_2021.present GO:0140223.Evidence GO:0003700.Evidence GO:0003712.Evidence)
+    tfc2["AP1"] = tfc2["JUN"]
+    tfc2["NFKB"] = tfc2["NFKB1"]
+    tfc2.key_field = "Transcription Factor (Associated Gene Name)"
+    tfc2.add_field "TFClass organism" do |k,v|
+      v.values_at(*%w(TFclass_human TFclass_mouse TFClass_rat))
+        .compact.reject{|e| e == "NA" || e == "" }
+        .collect{|e| e.split("_").last.split(".").first } * "+"
+    end
+
+    tfc2 = tfc2.slice(tfc2.fields - ["TFclass_mouse", "TFclass_human", "TFclass_rat"])
+    tfc2.fields = tfc2.fields.collect{|f| f.split("_").first.split(".").first}
+
+    tfc2.fields.each do |field|
+      tfc2.process field do |v|
+        v = field if v.include? "http"
+        v == "NA" ? nil : v.split("_").first
+      end
+    end
+
+    tsv.attach tfc2
+  end
+
+
+  dep_task :CollecTRI, ExTRI, :pairs_final
 
   dep :ExTRI_final
   dep :pairs_final

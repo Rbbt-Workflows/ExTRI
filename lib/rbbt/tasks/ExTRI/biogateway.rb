@@ -1,9 +1,9 @@
 module ExTRI
   #dep :sentence_coverage_NER
-  dep :pairs, :include_HTRI_low_conf => true
+  dep :pairs_final, :include_HTRI_low_conf => true
   task :biogateway => :tsv do
     #tsv = step(:sentence_coverage_NER).load
-    tsv = step(:pairs).load
+    tsv = step(:pairs_final).load
 
     log :prepare, "Preparing tsv for biogateway translation"
     tsv = tsv.to_double

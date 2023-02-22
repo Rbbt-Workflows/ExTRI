@@ -1,0 +1,59 @@
+#GO TERM	GO NAME	act	repr
+GO:0000432	positive regulation of transcription from RNA polymerase II promoter by glucose	x	
+GO:0000435	positive regulation of transcription from RNA polymerase II promoter by galactose	x	
+GO:0001216	DNA-binding transcription activator activity	x	
+GO:0001228	DNA-binding transcription activator activity, RNA polymerase II-specific	x	
+GO:0003713	transcription coactivator activity	x	
+GO:0006990	positive regulation of transcription from RNA polymerase II promoter involved in unfolded protein response	x	
+GO:0010628	positive regulation of gene expression	x	
+GO:0030374	nuclear receptor coactivator activity	x	
+GO:0036003	positive regulation of transcription from RNA polymerase II promoter in response to stress	x	
+GO:0036091	positive regulation of transcription from RNA polymerase II promoter in response to oxidative stress	x	
+GO:0045893	positive regulation of DNA-templated transcription	x	
+GO:0045943	positive regulation of transcription by RNA polymerase I	x	
+GO:0045944	positive regulation of transcription by RNA polymerase II	x	
+GO:0051091	positive regulation of DNA-binding transcription factor activity	x	
+GO:0051092	positive regulation of NF-kappaB transcription factor activity	x	
+GO:0060261	positive regulation of transcription initiation by RNA polymerase II	x	
+GO:0060965	negative regulation of miRNA-mediated gene silencing	x	
+GO:0061419	positive regulation of transcription from RNA polymerase II promoter in response to hypoxia	x	
+GO:0140537	transcription regulator activator activity	x	
+GO:1901522	positive regulation of transcription from RNA polymerase II promoter involved in cellular response to chemical stimulus	x	
+GO:1901838	positive regulation of transcription of nucleolar large rRNA by RNA polymerase I	x	
+GO:1902895	positive regulation of miRNA transcription	x	
+GO:1990440	positive regulation of transcription from RNA polymerase II promoter in response to endoplasmic reticulum stress	x	
+GO:2000144	positive regulation of DNA-templated transcription initiation	x	
+GO:2000825	positive regulation of androgen receptor activity	x	
+GO:0000122	negative regulation of transcription by RNA polymerase II		x
+GO:0001217	DNA-binding transcription repressor activity		x
+GO:0001227	DNA-binding transcription repressor activity, RNA polymerase II-specific		x
+GO:0003714	transcription corepressor activity		x
+GO:0010629	negative regulation of gene expression		x
+GO:0032088	negative regulation of NF-kappaB transcription factor activity		x
+GO:0032792	negative regulation of CREB transcription factor activity		x
+GO:0043433	negative regulation of DNA-binding transcription factor activity		x
+GO:0045814	negative regulation of gene expression, epigenetic		x
+GO:0045892	negative regulation of DNA-templated transcription		x
+GO:0061987	negative regulation of transcription from RNA polymerase II promoter by glucose		x
+GO:0140416	transcription regulator inhibitor activity		x
+GO:0140536	nuclear receptor corepressor activity		x
+GO:1902894	negative regulation of miRNA transcription		x
+GO:1990441	negative regulation of transcription from RNA polymerase II promoter in response to endoplasmic reticulum stress		x
+GO:2000637	positive regulation of miRNA-mediated gene silencing		x
+GO:2000820	negative regulation of transcription from RNA polymerase II promoter involved in smooth muscle cell differentiation		x
+GO:0000083	regulation of transcription involved in G1/S transition of mitotic cell cycle		
+GO:0000117	regulation of transcription involved in G2/M transition of mitotic cell cycle		
+GO:0000981	DNA-binding transcription factor activity, RNA polymerase II-specific		
+GO:0003700	DNA-binding transcription factor activity		
+GO:0004879	nuclear receptor activity		
+GO:0006346	DNA methylation-dependent heterochromatin formation		
+GO:0006355	regulation of DNA-templated transcription		
+GO:0006357	regulation of transcription by RNA polymerase II		
+GO:0010468	regulation of gene expression		
+GO:0023019	signal transduction involved in regulation of gene expression		
+GO:0031507	heterochromatin formation		
+GO:0032922	circadian regulation of gene expression		
+GO:0043620	regulation of DNA-templated transcription in response to stress		
+GO:0051090	regulation of DNA-binding transcription factor activity		
+GO:0061418	regulation of transcription from RNA polymerase II promoter in response to hypoxia		
+GO:1902893	regulation of miRNA transcription		
