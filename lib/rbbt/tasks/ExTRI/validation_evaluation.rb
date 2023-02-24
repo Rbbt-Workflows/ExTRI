@@ -36,9 +36,9 @@ module ExTRI
   #  res
   #end
   
-  dep :aug_validation_dataset
+  dep :validation_dataset
   task :auto_regulation_valid => :tsv do
-    vali = step(:aug_validation_dataset).load
+    vali = step(:validation_dataset).load
 
     auto =  []
     vali.each do |k,values|
@@ -63,11 +63,11 @@ module ExTRI
     tsv
   end
 
-  dep :aug_validation_dataset
+  dep :validation_dataset
   dep :ExTRI_confidence
   input :test_set, :array, "Separate entries for testing", []
   task :ExTRI_confidence_evaluation => :tsv do |test_set|
-    vali = step(:aug_validation_dataset).load
+    vali = step(:validation_dataset).load
     conf = step(:ExTRI_confidence).load
 
     if test_set && test_set.any?
@@ -109,7 +109,7 @@ module ExTRI
     
   end
 
-  dep :aug_validation_dataset, :compute => :produce
+  dep :validation_dataset, :compute => :produce
   input :cv_times, :integer, "Number of CV folds", 5
   dep :ExTRI_confidence_evaluation, :test_set => :placeholder, :compute => :bootstrap do |jobname,options,dependencies|
     keys = dependencies.first.run.keys
@@ -149,10 +149,10 @@ module ExTRI
     res
   end
 
-  dep :aug_validation_dataset
+  dep :validation_dataset
   dep :ExTRI_confidence
   task :ExTRI_threshold_evaluation => :tsv do 
-    vali = step(:aug_validation_dataset).load
+    vali = step(:validation_dataset).load
     conf = step(:ExTRI_confidence).load
 
     valid = vali.select("Valid" => "Valid").keys

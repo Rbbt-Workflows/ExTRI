@@ -1,6 +1,5 @@
 module ExTRI
 
-
   #{{{ Threshold
 
   input :score, :float, "Score threshold", 1.6
@@ -84,6 +83,8 @@ module ExTRI
 
     validation.fields = validation.fields.collect{|f| f.sub(/(..) Associated Gene Name/, '\1 (Associated Gene Name)')}
 
+    validation = ExTRI.update_tsv_symbols(validation)
+
     validation
   end
 
@@ -110,6 +111,8 @@ module ExTRI
       validation[k] = consensus == "V" ? "Valid" : "Not Valid"
     end
 
+    validation = ExTRI.update_tsv_symbols(validation)
+
     validation
   end
 
@@ -123,19 +126,37 @@ module ExTRI
       validation_dataset[k] = val ? "Valid" : "Not Valid"
     end
 
+    validation_dataset = ExTRI.update_tsv_symbols(validation_dataset)
+
     validation_dataset
+  end
+
+  task :NTNU_curation_validation => :tsv do
+    tsv = Rbbt.data.NTNU_Curation.current_stack.tsv :fields => ["Valid"]
+    tsv.key_field = "PMID:Sentence ID:TF:TG"
+    tsv.process "Valid" do |v|
+      v.to_s == 'true' ? "Valid" : "Not Valid"
+    end
+    tsv
+  end
+
+  dep :NTNU_curation_validation
+  task :validation_dataset => :tsv do 
+    tsv = dependencies.first.load
+    tsv.key_field = "PMID:Sentence ID:TF:TG"
+    ExTRI.update_tsv_symbols tsv
   end
 
   #{{{ Prediction model
 
-  dep :aug_validation_dataset
+  dep :validation_dataset
   dep :ExTRI_counts
   dep :ExTRI_postprocess
   input :post_process, :boolean, "Filter training sentences by postprocessing rules", false
   input :test_set, :array, "Separate entries for testing", []
   task :prediction => :tsv do |post_process,test_set|
     full = step(:ExTRI_counts).load
-    validation = step(:aug_validation_dataset).load
+    validation = step(:validation_dataset).load
 
     if post_process
       post = step(:ExTRI_postprocess).load
@@ -255,71 +276,4 @@ Assigns confidence for every ExTRI triplet (TF:TG:PMID) based on the best confid
   end
 
 
-  #dep :validation_dataset
-  #dep :sentence_coverage_full_NER_counts
-  #task :predicted_pairs => :array do 
-  #  full = step(:sentence_coverage_full_NER_counts).load
-  #  validation = step(:validation_dataset).load
-
-  #  all_validation_keys = validation.keys
-  #  valid_keys = validation.select("Valid" => true).keys
-
-  #  require 'rbbt/util/R'
-  #  train = full.select(all_validation_keys).attach validation, :fields => ["Valid"]
-  #  Open.write(file('train'), train.to_s)
-  #  data = nil
-  #  TmpFile.with_file do |file|
-  #    train.R <<-EOF
-  #    library(randomForest)
-  #    names(data) <- make.names(names(data))
-  #    data$Valid <- as.factor(data$Valid)
-  #    m = randomForest(Valid ~ Interaction.score + PMID.counts + Sentence.counts, data=data)
-  #    save(m, file='#{file}')
-  #    EOF
-
-  #    data = full.R <<-EOF
-  #    library(randomForest)
-  #    names(data) <- make.names(names(data))
-  #    load('#{file}')
-  #    predictions = predict(m, data)
-  #    predictions = predictions[!is.na(predictions)]
-  #    data = data.frame(predictions)
-  #    rownames(data) <- names(predictions)
-  #    EOF
-  #  end
-
-  #  data.select("predictions" => "Valid").keys.collect{|k| k.split(":").values_at(2,3)*":"}
-  #end
-
-  #dep :predicted_pairs
-  #dep :threshold_pairs, :pmids => 1000 do |jobname,options|
-  #  pmids = [2, 3, 1000]
-  #  o = options.dup
-  #  pmids.collect do |pmid|
-  #    o[:pmids] = pmid
-  #    ExTRI.job(:threshold_pairs, jobname, o)
-  #  end
-  #end
-  #task :pair_analysis => :tsv do
-  #  pred = step(:predicted_pairs).load
-  #  tsv = TSV.setup({}, :key_fields => "TF:TG", :fields => [], :type => :list)
-
-  #  pred_tsv = TSV.setup(pred, :key_fields => "TF:TG", :fields => [], :type => :list)
-  #  pred_tsv.add_field "Prediction" do 
-  #    "Prediction"
-  #  end
-  #  tsv.attach pred_tsv, :complete => true
-
-  #  dependencies.each do |job|
-  #    next if job.path.include? 'predicted_pairs'
-  #    pmids = job.recursive_inputs[:pmids]
-  #    t = TSV.setup(job.load, :key_fields => "TF:TG", :fields => [], :type => :list)
-  #    t.add_field "Threshold PIMD > #{pmids}" do 
-  #      "Threshold #{pmids}"
-  #    end
-  #    tsv.attach t, :complete => true
-  #  end
-
-  #  tsv
-  #end
 end

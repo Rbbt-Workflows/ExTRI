@@ -144,6 +144,8 @@ module ExTRI
         v[1] = tg 
       end
 
+      v = ExTRI.update_symbols(v)
+
       key = [k, v[0], v[1]] * ":"
       [key,v]
     end
@@ -151,11 +153,11 @@ module ExTRI
     Misc.sort_stream(dumper.stream)
   end
 
-  dep :ExTRI_clean
+  dep :ExTRI_clean, :compute => :produce
   task :ExTRI_postprocess => :tsv do
     tsv = step(:ExTRI_clean).load
 
-    TSV.traverse Rbbt.root.data["post_process_rules-5.tsv"].find(:lib), :type => :array do |line|
+    TSV.traverse Rbbt.root.data["post_process_rules-5.tsv"].find(:lib), :type => :array, :bar => "Applying post-proccessing rules" do |line|
       next if line =~ /^#/
 
       rtf, rtg, has, hasnot, exact = line.split(",").collect{|v| v.empty? ? nil : v.strip}

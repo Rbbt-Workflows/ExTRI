@@ -12,6 +12,8 @@ module ExTRI
     translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
     
     TSV.traverse db, :into =>  new do |pair,values|
+      pair = ExTRI.update_key_symbols(pair)
+      values = ExTRI.update_symbols(values)
       g1, g2 = pair.split(":")
       gn1, gn2 = translation.values_at g1, g2
       #Log.error "Gene not found in translation file: " + g1 if gn1.nil?
@@ -267,18 +269,6 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       key.split(":").last
     end
 
-    tfclass = TFClass.tfs.list
-    tfclass << "AP1"
-    tfclass << "NFKB"
-    tsv.add_field "TFClass" do |pair,values|
-      tf = pair.split(":").first
-      (tfclass.include? tf) ? "TFClass" : ""
-    end
-
-    tsv.add_field "Auto-regulation" do |pair,values|
-      (values[0] == values[1]) ? "Auto-regulation" : ""
-    end
-
     tsv
   end
 
@@ -293,35 +283,101 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
       category.to_s.sub("_putative", "")
     end
 
+    tfclass = TFClass.tfs.list
+    tfclass << "AP1"
+    tfclass << "NFKB"
+    tsv.add_field "TFClass" do |pair,values|
+      tf = pair.split(":").first
+      (tfclass.include? tf) ? "TFClass" : ""
+    end
+
+    tsv.add_field "Auto-regulation" do |pair,values|
+      (values[0] == values[1]) ? "Auto-regulation" : ""
+    end
+
     tsv.select({"TF Category" => "none"}, true)
   end
+
+  #dep :pairs
+  #task :pairs_final_old => :tsv do
+  #  tsv = step(:pairs).load
+  #  tfc2 = Rbbt.root.data["TFC2_master_24012023.tsv"].tsv :type => :list, :fields => %w(lambert_2018.present TFclass_human TFclass_mouse TFclass_rat Lovering_2021.present GO:0140223.Evidence GO:0003700.Evidence GO:0003712.Evidence)
+  #  tfc2["AP1"] = tfc2["JUN"]
+  #  tfc2["NFKB"] = tfc2["NFKB1"]
+  #  tfc2.key_field = "Transcription Factor (Associated Gene Name)"
+  #  tfc2.add_field "TFClass organism" do |k,v|
+  #    v.values_at(*%w(TFclass_human TFclass_mouse TFClass_rat))
+  #      .compact.reject{|e| e == "NA" || e == "" }
+  #      .collect{|e| e.split("_").last.split(".").first } * "+"
+  #  end
+
+  #  tfc2 = tfc2.slice(tfc2.fields - ["TFclass_mouse", "TFclass_human", "TFclass_rat"])
+  #  tfc2.fields = tfc2.fields.collect{|f| f.split("_").first.split(".").first}
+
+  #  tfc2.fields.each do |field|
+  #    tfc2.process field do |v|
+  #      v = field if v.include? "http"
+  #      v == "NA" ? nil : v.split("_").first
+  #    end
+  #  end
+
+  #  tsv.attach tfc2
+  #end
 
   dep :pairs
   task :pairs_final => :tsv do
     tsv = step(:pairs).load
-    tfc2 = Rbbt.root.data["TFC2_master_24012023.tsv"].tsv :type => :list, :fields => %w(lambert_2018.present TFclass_human TFclass_mouse TFclass_rat Lovering_2021.present GO:0140223.Evidence GO:0003700.Evidence GO:0003712.Evidence)
-    tfc2["AP1"] = tfc2["JUN"]
-    tfc2["NFKB"] = tfc2["NFKB1"]
-    tfc2.key_field = "Transcription Factor (Associated Gene Name)"
-    tfc2.add_field "TFClass organism" do |k,v|
-      v.values_at(*%w(TFclass_human TFclass_mouse TFClass_rat))
-        .compact.reject{|e| e == "NA" || e == "" }
-        .collect{|e| e.split("_").last.split(".").first } * "+"
-    end
+    base_path = Rbbt.share.databases.ExTRI.Feb2023_update.TF_info
+    lambert_genes = base_path.Lambert_source.tsv.keys
+    lovering_genes = base_path.Lovering_source_download_23022023.tsv.keys
 
-    tfc2 = tfc2.slice(tfc2.fields - ["TFclass_mouse", "TFclass_human", "TFclass_rat"])
-    tfc2.fields = tfc2.fields.collect{|f| f.split("_").first.split(".").first}
+    go_0003712_rat_uni = base_path["GO_0003712_mouse_&_rat_QuickGO_230223.tsv"].tsv(:key_field => "GENE PRODUCT ID").select("organism" => 'rat').keys
+    go_0003712_mouse_uni = base_path["GO_0003712_mouse_&_rat_QuickGO_230223.tsv"].tsv(:key_field => "GENE PRODUCT ID").select("organism" => 'mouse').keys
 
-    tfc2.fields.each do |field|
-      tfc2.process field do |v|
-        v = field if v.include? "http"
-        v == "NA" ? nil : v.split("_").first
+    uni_equivalences = PRO.uniprot_equivalences.tsv :merge => true, :persist => true, :type => :flat
+    uni2name = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :persist => true
+    gene2uniHsa = Organism.identifiers(IntAct.organism("Hsa")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+    gene2uniMmu = Organism.identifiers(IntAct.organism("Mmu")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+    gene2uniRno = Organism.identifiers(IntAct.organism("Rno")).index :target => "UniProt/SwissProt Accession", :order => true, :persist => true
+
+    go_0003712_rat = uni2name.values_at(*uni_equivalences.values_at(*go_0003712_rat_uni).flatten.compact).compact
+    go_0003712_mouse = uni2name.values_at(*uni_equivalences.values_at(*go_0003712_mouse_uni).flatten.compact).compact
+
+    go_0003712_human = base_path["GO_0003712_human_QuickGO_230223.tsv"].tsv.keys
+    go_0003700 = base_path["GO_0003700_human_QuickGO_230223.tsv"].tsv.keys
+    go_0140223 = base_path["GO_0140223_human_QuickGO_230223.tsv"].tsv.keys
+
+    %w(Lambert Lovering GO:0003700 GO:0140223).zip([lambert_genes, lovering_genes, go_0003700, go_0140223]).each do |name,genes|
+      genes = ExTRI.update_symbols(genes)
+      tsv.add_field name do |k,v|
+        genes.include?(v.flatten.first) ? name : nil
       end
     end
 
-    tsv.attach tfc2
-  end
+    go_0003712_human = ExTRI.update_symbols(go_0003712_human)
+    go_0003712_rat = ExTRI.update_symbols(go_0003712_rat)
+    go_0003712_mouse = ExTRI.update_symbols(go_0003712_mouse)
 
+    tsv.add_field "GO:0003712" do |k,v|
+      %w(human mouse rat).zip([go_0003712_human, go_0003712_mouse, go_0003712_rat])
+        .select{|n,g| g.include? v.flatten.first }
+        .collect{|n,g| n }
+    end
+
+    tfclass = TFClass.tfs.list
+    tfclass << "AP1"
+    tfclass << "NFKB"
+    tsv.add_field "TFClass" do |pair,values|
+      tf = pair.split(":").first
+      (tfclass.include? tf) ? "TFClass" : ""
+    end
+
+    tsv.add_field "Auto-regulation" do |pair,values|
+      (values[0] == values[1]) ? "Auto-regulation" : ""
+    end
+
+    tsv
+  end
 
   dep_task :CollecTRI, ExTRI, :pairs_final
 
