@@ -152,10 +152,14 @@ module TFClass
 
     all_names.to_a.sort * "\n" + "\n"
   end
+
+  TFClass.claim TFClass.tfs, :proc do
+    Rbbt.share.databases.ExTRI.Feb2023_update.TFClass.TFClass_per_03112022.tsv.keys
+  end
 end
 if __FILE__ == $0
   require 'rbbt/workflow'
   Workflow.require_workflow "ExTRI"
-  iif TFClass.hierarchy_json.produce(true).find 
+  iif TFClass.tfs.produce(true).list 
 end
 

@@ -12,8 +12,6 @@ module ExTRI
     translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
     
     TSV.traverse db, :into =>  new do |pair,values|
-      pair = ExTRI.update_key_symbols(pair)
-      values = ExTRI.update_symbols(values)
       g1, g2 = pair.split(":")
       gn1, gn2 = translation.values_at g1, g2
       #Log.error "Gene not found in translation file: " + g1 if gn1.nil?
@@ -24,6 +22,8 @@ module ExTRI
       #Log.info "TF Translation " << [g1, gn1] * " => " if g1 != gn1
       #Log.info "TG Translation " << [g2, gn2] * " => " if g2 != gn2
       npair = [gn1, gn2] * ":"
+      npair = ExTRI.update_key_symbols(npair)
+      values = ExTRI.update_symbols(values)
       [npair, values]
     end
 
@@ -350,7 +350,10 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     %w(Lambert Lovering GO:0003700 GO:0140223).zip([lambert_genes, lovering_genes, go_0003700, go_0140223]).each do |name,genes|
       genes = ExTRI.update_symbols(genes)
       tsv.add_field name do |k,v|
-        genes.include?(v.flatten.first) ? name : nil
+        g = v.flatten.first
+        g = "JUN" if g == "AP1"
+        g = "NFKB1" if g == "NFKB"
+        genes.include?(g) ? name : nil
       end
     end
 
@@ -359,9 +362,15 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     go_0003712_mouse = ExTRI.update_symbols(go_0003712_mouse)
 
     tsv.add_field "GO:0003712" do |k,v|
+      g = v.flatten.first
+      g = "JUN" if g == "AP1"
+      g = "NFKB1" if g == "NFKB"
+
       %w(human mouse rat).zip([go_0003712_human, go_0003712_mouse, go_0003712_rat])
-        .select{|n,g| g.include? v.flatten.first }
-        .collect{|n,g| n }
+        .select do |name,genes| 
+          genes.include? g
+        end
+        .collect{|name,genes| name }
     end
 
     tfclass = TFClass.tfs.list

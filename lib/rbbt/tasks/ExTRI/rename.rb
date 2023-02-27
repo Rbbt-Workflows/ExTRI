@@ -1,6 +1,6 @@
 module ExTRI
   def self.translations
-    @@translations ||= Rbbt.root.data.update_gene_names.tsv
+    @@translations ||= Rbbt.root.data.update_gene_names_v2.tsv
   end
 
   def self.update_symbols(value)
@@ -36,7 +36,7 @@ module ExTRI
 
   dep :gene_names
   task :bad_names => :tsv do
-    good_names = Organism.identifiers("Hsa/feb2021").tsv(:key_field => "Associated Gene Name", :fields => []).keys
+    good_names = Organism.identifiers(ExTRI.updated_organism).tsv(:key_field => "Associated Gene Name", :fields => []).keys
 
     tfs = step(:pairs_final).load.keys.collect{|k| k.split(":").first }
     bad_names = step(:gene_names).load - good_names
@@ -51,9 +51,9 @@ module ExTRI
 
   dep :bad_names
   task :good_names => :tsv do
-    index = Organism.identifiers("Hsa/feb2021").index :target => "Associated Gene Name", :persist => true, :order => true
+    index = Organism.identifiers(ExTRI.updated_organism).index :target => "Associated Gene Name", :persist => true, :order => true
 
-    dumper = TSV::Dumper.new(:key_field => "original (Associated Gene Name)", :fields => ["TF", "good (Associated Gene Name)"], :type => :single)
+    dumper = TSV::Dumper.new(:key_field => "original (Associated Gene Name)", :fields => ["TF", "good (Associated Gene Name)"], :type => :list)
     dumper.init
     TSV.traverse step(:bad_names), :type => :single, :into => dumper do |gene,tf|
       good = index[gene]

@@ -14,6 +14,11 @@ module ExTRI
     "Hsa/oct2016"
   end
 
+  def self.updated_organism
+    "Hsa/feb2023"
+  end
+
+
   def self.entrez_gene_index
 
     entrez_gene_index = {}

@@ -6,7 +6,7 @@ module ExTRI
     tsv = step(:validation_dataset).load.select("Valid" => "Valid")
     fixed = step(:ExTRI_clean).load
 
-    name2ens = Organism.identifiers("Hsa/feb2014").index :persist => true
+    name2ens = Organism.identifiers(ExTRI.organism).index :persist => true
     hashes = []
     tsv.through do |pair,values|
       next unless fixed.include? pair
@@ -51,7 +51,7 @@ module ExTRI
 
     hc = fixed.select("Prediction confidence" => "High")
 
-    name2ens = Organism.identifiers("Hsa/feb2014").index :persist => true
+    name2ens = Organism.identifiers(ExTRI.organism).index :persist => true
     hashes = []
     hc.through do |pair,values|
       next unless fixed.include? pair
