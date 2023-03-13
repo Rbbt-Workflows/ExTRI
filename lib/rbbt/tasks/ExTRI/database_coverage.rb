@@ -5,7 +5,7 @@ module ExTRI
   NFKB_SYN=%w(NFKB1 NFKB2 RELA RELB)
 
 
-  DATABASES=%w(ExTRI TFactS HTRI IntAct GOA TRRUST SIGNOR CytReg GEREDB)
+  DATABASES=%w(ExTRI TFactS HTRI IntAct GOA TRRUST SIGNOR CytReg GEREDB Pavlidis2021 DoRothEA_A) + ["NTNU Curated"]
 
   helper :normalize_db do |db|
     new = db.annotate({})
