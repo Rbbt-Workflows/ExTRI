@@ -95,6 +95,28 @@ module ExTRI
     res
   end
 
+  dep :table_pairs_content
+  extension :png
+  task :pairs_content_barplot => :binary do
+    require 'rbbt/util/R'
+    tsv = step(:table_pairs_content).path.tsv :fields => "TF:TG All", :type => :list, :cast => :to_f
+    tsv.fields = ["TRIs"] 
+    tsv.delete_if{|k,v| k.include? "-U" }
+    tsv.delete_if{|k,v| k.include? "Union" }
+    ordered_databases = tsv.sort_by{|k,v| v.first.to_f}.reverse.collect{|k,v| k }
+    R::PNG.ggplot self.tmp_path, tsv, <<~EOF, 5, 5
+ordered_databases = #{R.ruby2R ordered_databases}
+data$Database=rownames(data)
+data$Database=factor(data$Database, levels = ordered_databases)
+ggplot(data) + geom_col(aes(x=Database,y=TRIs, fill=Database)) + 
+   theme_classic() + 
+   theme(
+   legend.position = "none",
+        axis.text.x  = element_text(angle=90))
+    EOF
+    nil
+  end
+
   dep :ExTRI_postprocess
   extension :xlsx
   task :post_processing_sentences => :binary do

@@ -1,4 +1,5 @@
 ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
+ README.md
  workflow.rb
  bin=bin{
   add_small_scale_experiment.rb

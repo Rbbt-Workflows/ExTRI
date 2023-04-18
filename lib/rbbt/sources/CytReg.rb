@@ -23,7 +23,26 @@ module CytReg
     tsv.fields = tsv.fields.collect{|f| f == "PMIDs" ? "PMID" : f }
     tsv
   end
+
+  CytReg.claim CytReg.tf_cyt2, :proc do 
+    require 'rbbt/tsv/csv'
+    url = "https://cytreg.bu.edu/cytreg_v2.csv"
+    tsv = TSV.csv(url, :merge => true).to_double
+    tsv = tsv.reorder("tf",tsv.fields - %w(tf source), :zipped => true, :merge => true)
+    tsv.key_field = "Transcription Factor (Associated Gene Name)"
+    tsv.fields = tsv.fields.tap{|f| f[0] = "Cytokine (Associated Gene Name)"}
+    tsv.fields = tsv.fields.collect{|f| f == "PMIDs" ? "PMID" : f }
+    tsv
+  end
+
+  CytReg.claim CytReg.tf_cyt_merge, :proc do 
+    tsv = CytReg.tf_cyt1.tsv
+    tsv = tsv.merge_zip CytReg.tf_cyt2.tsv
+    tsv
+  end
 end
 
-iif CytReg.tf_cyt.produce(true).find if __FILE__ == $0
+Log.tsv CytReg.tf_cyt.produce(true).tsv if __FILE__ == $0
+Log.tsv CytReg.tf_cyt2.produce(true).tsv if __FILE__ == $0
+Log.tsv CytReg.tf_cyt_merge.produce(true).tsv if __FILE__ == $0
 

@@ -219,8 +219,6 @@ module ExTRI
     new
   end
 
-  export :venn, :top
-
   dep :top, :db => :placeholder, :compute => [:bootstrap, 3, :canfail] do |jobname,options|
     ExTRI::DATABASES.collect do |db|
       {:inputs => options.merge(:db => db)}

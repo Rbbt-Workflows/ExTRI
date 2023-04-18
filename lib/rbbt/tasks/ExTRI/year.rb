@@ -90,7 +90,7 @@ module ExTRI
 
     years = pmid_details.column("Year").values.flatten.compact.uniq.sort
 
-    database_years = TSV.setup({}, :key_field => "Database", :fields => years, :type => :double)
+    database_years = TSV.setup({}, :key_field => "Database", :fields => years, :type => :list, :cast => :to_i)
     databases = pmid_details.fields[2..-1]
     TSV.traverse pmid_details do |pmid, values|
       year = values["Year"].first
@@ -113,7 +113,9 @@ module ExTRI
     log :producing
     require 'rbbt/util/R'
 
-    step(:database_years).load.R <<-EOF
+    database_years = step(:database_years).load
+    sorted_databases = database_years.collect{|d,v| [d, Misc.sum(v)]}.sort_by{|d,c| c}.reverse.collect{|d,c| d}
+    database_years.R <<-EOF
 rbbt.require('reshape')
 rbbt.require('plyr')
 rbbt.require('dplyr')
@@ -125,20 +127,25 @@ remove.GEREDB <- subset(m, Database == "GEREDB" & Year==2011 )
 remove.ExTRI <- subset(m, Database == "ExTRI" & Year==2014 )
 m = anti_join(m, remove.GEREDB)
 m = anti_join(m, remove.ExTRI)
+sorted_databases = #{R.ruby2R sorted_databases}
+m$Database <- factor(m$Database, levels = sorted_databases)
 
 years = as.integer(levels(m$Year))
-breaks = pretty(years, length(years) / 2)
-g <- ggplot(m, aes(x=Year, y=Count)) + geom_line(aes(group=Database, color=Database, linetype=Database)) + scale_x_discrete(breaks=breaks) + 
+breaks = pretty(years, round(length(years) / 5))
+g <- ggplot(m, aes(x=Year, y=Count)) + geom_line(aes(group=Database, color=Database, linetype=Database), size=1.7) + scale_x_discrete(breaks=breaks) + 
+   ylab("Number of PMIDS") +
    theme_classic() + 
+   scale_color_brewer(type="qual", palette = "Paired") +
    theme(
-        axis.title.y  = element_text(angle=90, vjust=0.5, size=20), 
-        axis.text.y  = element_text(angle=90, vjust=0.5, size=20), 
+        axis.title.y  = element_text(angle=90, vjust=0.5, size=18), 
+        axis.text.y  = element_text(angle=90, vjust=0.5, size=18), 
         axis.title.x  = element_text(size=20), 
-        axis.text.x  = element_text(angle=90, vjust=0.5, size=20), 
+        axis.text.x  = element_text(angle=45, vjust=0.5, size=18), 
         legend.title = element_text(size=16), 
-        legend.text = element_text(size=16))
+        legend.text = element_text(size=16),
+        legend.key.width = unit(2, 'cm'))
 
-rbbt.png_plot('#{self.tmp_path}', 'plot(g)', height=600, width=800)
+rbbt.png_plot('#{self.tmp_path}', 'plot(g)', height=600, width=900)
 
 data = NULL
     EOF
