@@ -157,7 +157,7 @@ module ExTRI
   task :ExTRI_postprocess => :tsv do
     tsv = step(:ExTRI_clean).load
 
-    TSV.traverse Rbbt.root.data["post_process_rules-5.tsv"].find(:lib), :type => :array, :bar => "Applying post-proccessing rules" do |line|
+    TSV.traverse Rbbt.root.data["post_process_rules-7.tsv"].find(:lib), :type => :array, :bar => "Applying post-proccessing rules" do |line|
       next if line =~ /^#/
 
       rtf, rtg, has, hasnot, exact = line.split(",").collect{|v| v.empty? ? nil : v.strip}

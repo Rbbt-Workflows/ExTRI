@@ -70,11 +70,13 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
   hdacs.list
   hdacs_etc.list
   pmids2year_all.txt
+  post_process_rules.tsv
   post_process_rules-2.tsv
   post_process_rules-3.tsv
   post_process_rules-4.tsv
   post_process_rules-5.tsv
-  post_process_rules.tsv
+  post_process_rules-6.tsv
+  post_process_rules-7.tsv
   signal_transd.list
   TFclass_extended=TFclass_extended{
    Include_non_TFClass_300317.tsv
