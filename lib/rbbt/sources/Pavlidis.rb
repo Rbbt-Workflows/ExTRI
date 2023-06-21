@@ -14,7 +14,7 @@ module Pavlidis
   #self.search_paths[:default] = :lib
 
 
-  Pavlidis.claim Pavlidis.tf_tg, :proc do 
+  Pavlidis.claim Pavlidis.tf_tg_OLD, :proc do 
     url = "https://doi.org/10.1371/journal.pcbi.1009484.s034"
 
     ent2ensg_hsa = Organism.identifiers(organism("Hsa")).index :target => "Ensembl Gene ID", :fields => ["Entrez Gene ID"], :persist => true
@@ -70,7 +70,7 @@ Curation
         next
       end
 
-      values = [tg_name, exp_type, exp_method, mode]
+      values = [[tg_name], [exp_type], [exp_method], [mode]]
 
       [tf_name, values] 
     end

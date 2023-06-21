@@ -142,8 +142,8 @@ module ExTRI
 
     tsv.namespace = Organism.default_code('Hsa')
     tsv.identifiers = Organism.identifiers(tsv.namespace)
-    tsv = tsv.change_key("UniProt/SwissProt Accession")
-    tsv = tsv.swap_id("Associated Gene Name", "Entrez Gene ID")
+    #tsv = tsv.change_key("UniProt/SwissProt Accession")
+    #tsv = tsv.swap_id("Associated Gene Name", "Entrez Gene ID")
 
     tsv
   end
