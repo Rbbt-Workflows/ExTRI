@@ -145,12 +145,13 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
   input :ntnu_curated, :select, "Set of NTNU_Curated", "jun2023", :select_options => %w(jun2023 feb2023)
   task :pairs => :tsv do |confidence,include_HTRI,ntnu_curated|
     orig = step(:ExTRI_final).load
+
     id_file = Organism.identifiers(ExTRI.organism)
 
     cyt_reg = CytReg.tf_cyt.tsv(:merge => true)
     cyt_reg = cyt_reg.unzip(0, true)
 
-    ntnu_curated = ExTRI.NTNU_Curated.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :merge => true, :type => :double)
+    ntnu_curated = ExTRI["NTNU_Curated." + ntnu_curated].tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :merge => true, :type => :double)
     ntnu_curated = ntnu_curated.unzip(0,true)
     
     intact = IntAct.tf_tg.tsv(:merge => true).unzip
@@ -178,7 +179,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     #thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
-    #
+    
     dorotheaA = Dorothea.tf_tg.tsv(:merge => true).unzip(0, true)
     flagged = ExTRI.TFactS_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
