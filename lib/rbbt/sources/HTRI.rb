@@ -19,13 +19,14 @@ module HTRI
 
   HTRI.claim HTRI.tf_tg, :proc do 
     file = HTRI['.source'].data
+    file.produce
     tsv = TSV.open(file, :fix => Proc.new{|l| l.gsub(/\t+/,"\t")}, :header_hash => "", :key_field => "SYMBOL_TF", :fields => ["SYMBOL_TG", "TECHNIQUE", "PUBMED_ID"], :merge => true)
     tsv.key_field = "Transcription Factor (Associated Gene Name)"
     tsv.fields = ["Target Gene (Associated Gene Name)", "Technique", "PMID"]
     tsv.namespace = HTRI.organism
 
     tsv.add_field "Confidence" do |k,v|
-      v["TECHNIQUE"].collect{|technique|
+      v["Technique"].collect{|technique|
         case technique
         when "Electrophoretic Mobility Shift Assay", "Chromatin Immunoprecipitation", "Dnase I Footprinting", 
           "Avidin/Biotin-conjugated DNA Binding Assay", "CpG Chromatin Immunoprecipitation", "Surface Plasmon Resonance",

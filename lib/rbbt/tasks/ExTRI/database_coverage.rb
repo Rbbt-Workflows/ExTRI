@@ -143,35 +143,41 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
   input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold"]
   input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
   task :pairs => :tsv do |confidence,include_HTRI|
+    orig = step(:ExTRI_final).load
+
     id_file = Organism.identifiers(ExTRI.organism)
 
-    orig = step(:ExTRI_final).load
-    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip(0, true)
+    cyt_reg = CytReg.tf_cyt.tsv(:merge => true)
+    cyt_reg = cyt_reg.unzip(0, true)
+
+    ntnu_curated = ExTRI.NTNU_Curated.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :merge => true, :type => :double)
+    ntnu_curated = ntnu_curated.unzip(0,true)
+    
+    intact = IntAct.tf_tg.tsv(:merge => true).unzip
+
+    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa, persist_identifiers: true).unzip(0, true)
+    
+    geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"]).unzip(0,true)
 
     pavlidis = Pavlidis.tf_tg.tsv(:merge => true)
     pavlidis = pavlidis.unzip(0, true)
 
-    encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-
-    #goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    goa = GO.tf_tg.tsv(:merge => true).unzip
-
-    #intact = ExTRI.IntAct.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
     intact = IntAct.tf_tg.tsv(:merge => true).unzip
 
-    tfacts = TFactS.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip(0, true)
+    goa = GO.tf_tg.tsv(:merge => true).unzip
+
+    encode1 = ExTRI.Encode.tsv(:merge => true)
+
+    tfacts = TFactS.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :one2one => true).unzip(0, true)
+
     trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip(0, true)
 
     htri = HTRI.tf_tg.tsv(:merge => true).unzip(0, true)
+
     htri = htri.select("Confidence" => "High") unless include_HTRI
 
     #thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
-    geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"]).unzip(0,true)
-
-    ntnu_curated = ExTRI.NTNU_Curated.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :merge => true, :type => :double).unzip(0,true)
-
-    cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
 
     dorotheaA = Dorothea.tf_tg.tsv(:merge => true).unzip(0, true)
     flagged = ExTRI.TFactS_flagged_articles.list

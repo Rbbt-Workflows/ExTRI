@@ -183,7 +183,7 @@ module ExTRI
         ! reject
       end
 
-      Open.write(file("HDACS_list"), rejects * "\n")
+      Open.write(file("HDACS_list"), rejects * "\n", :mode => 'a')
     end
 
     tsv
@@ -226,47 +226,4 @@ module ExTRI
       [k, values + [pmid_c, sentence_c, sentence_p, sentence.length, sentence_p.to_f / sentence.length]]
     end
   end
-
-  #dep :ExTRI_postprocess
-  #task :ExTRI_upstream_regulators => :tsv do
-  #  upstream = Rbbt.data["hdacs_etc.list"].find(:lib).list
-  #  TSV.traverse step(:ExTRI_postprocess), :type => :array, :into => :stream do |line|
-  #    tg = line.split("\t")[2] 
-  #    next unless upstream.include? tg
-  #    line
-  #  end
-  #end
-
-  #dep :flagged_tfs
-  #task :sentence_coverage_subset => :tsv do
-
-  #  flagged_tfs = step(:flagged_tfs).load
-
-  #  id_file = Organism.identifiers(ExTRI.organism)
-
-  #  encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-  #  goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-  #  intact = ExTRI.IntAct.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-
-  #  tfacts = TFactS.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
-  #  trrust = TRRUST.tf_tg.tsv(:merge => true).unzip
-  #  htri = HTRI.tf_tg.tsv(:merge => true).unzip
-
-  #  flagged = ExTRI.TFactS_flagged_articles.list
-  #  tfacts.add_field "Confidence" do |tf,values|
-  #    sign,species,source,pmids = values
-  #    (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
-  #  end
-
-  #  tsv = ExTRI.TF.tsv(:merge => true).select("TF Associated Gene Name").unzip(0, true, ":", false).unzip("TF Associated Gene Name", true, ":", false).unzip("TG Associated Gene Name", true, ":", false).to_list
-
-  #  tsv = attach_db tsv, htri, "HTRI"
-  #  tsv = attach_db tsv, trrust, "TRRUST"
-  #  tsv = attach_db tsv, tfacts, "TFactS"
-  #  tsv = attach_db tsv, encode, "Encode"
-  #  tsv = attach_db tsv, goa, "GOA"
-  #  tsv = attach_db tsv, intact, "IntAct"
-
-  #  tsv
-  #end
 end

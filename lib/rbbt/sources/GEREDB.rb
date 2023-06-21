@@ -16,15 +16,20 @@ module GEREDB
 
 
   GEREDB.claim GEREDB[".source"].data, :proc do 
-    tsv = TmpFile.with_file do |dir|
-      Misc.in_dir dir do
-        CMD.cmd("wget http://www.thua45.cn/geredb/GREDB_dump.rar -O file.rar")
-        CMD.cmd("unrar x file.rar")
-        tsv = TSV.open 'Links.txt', :header_hash => '', :type => :double, :merge => true
-        evidence = TSV.open "Evidence.txt", :header_hash => '', :type => :double, :key_field => 'lid', :merge => true
-        evidence = evidence.to_list{|l| l* ";"}
-        tsv.attach evidence, :merge => true, :fields => %w(pmid stn)
+    begin
+      tsv = TmpFile.with_file do |dir|
+        Misc.in_dir dir do
+          CMD.cmd("wget http://www.thua45.cn/geredb/GREDB_dump.rar -O file.rar")
+          CMD.cmd("unrar x file.rar")
+          tsv = TSV.open 'Links.txt', :header_hash => '', :type => :double, :merge => true
+          evidence = TSV.open "Evidence.txt", :header_hash => '', :type => :double, :key_field => 'lid', :merge => true
+          evidence = evidence.to_list{|l| l* ";"}
+          tsv.attach evidence, :fields => %w(pmid stn)
+        end
       end
+    rescue
+      Log.exception $!
+      raise $!
     end
     tsv.to_s
   end
