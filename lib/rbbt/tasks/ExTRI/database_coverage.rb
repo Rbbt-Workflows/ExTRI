@@ -86,51 +86,51 @@ module ExTRI
     end
   end
 
-  dep :ExTRI_final, :test_set => []
-  input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
-  task :sentence_coverage_old => :tsv do |include_HTRI|
-    id_file = Organism.identifiers(ExTRI.organism)
+  #dep :ExTRI_final, :test_set => []
+  #input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
+  #task :sentence_coverage_old => :tsv do |include_HTRI|
+  #  id_file = Organism.identifiers(ExTRI.organism)
 
-    encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+  #  encode = ExTRI.Encode.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
 
-    #goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    goa = GO.tf_tg.tsv(:merge => true).unzip
+  #  #goa = ExTRI.GOA.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+  #  goa = GO.tf_tg.tsv(:merge => true).unzip
 
-    #intact = ExTRI.IntAct.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
-    intact = IntAct.tf_tg.tsv(:merge => true).unzip
+  #  #intact = ExTRI.IntAct.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => id_file).swap_id("Entrez Gene ID", "Associated Gene Name", :identifiers => id_file).unzip
+  #  intact = IntAct.tf_tg.tsv(:merge => true).unzip
 
-    tfacts = TFactS.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
-    trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
-    htri = HTRI.tf_tg.tsv(:merge => true).unzip(0, true)
-    htri = htri.select("Confidence" => "High") unless include_HTRI
-    signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
-    thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true).unzip
+  #  tfacts = TFactS.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :merge => true, :zipped => true).unzip
+  #  trrust = TRRUST.Hsa.tf_tg.tsv(:merge => true).unzip
+  #  htri = HTRI.tf_tg.tsv(:merge => true).unzip(0, true)
+  #  htri = htri.select("Confidence" => "High") unless include_HTRI
+  #  signor = Signor.tf_tg.tsv(:merge => true).change_key("Associated Gene Name", :identifiers => UniProt.identifiers.Hsa).unzip
+  #  thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "sentence", "class", "details", "PMID"], :merge => true).unzip
 
-    geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"])
+  #  geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"])
 
-    cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
+  #  cyt_reg = CytReg.tf_cyt.tsv(:merge => true).unzip(0, true)
 
-    flagged = ExTRI.TFactS_flagged_articles.list
-    tfacts.add_field "Confidence" do |tf,values|
-      sign,species,source,pmids = values
-      (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
-    end
-  
-    tsv = step(:ExTRI_final).load
+  #  flagged = ExTRI.TFactS_flagged_articles.list
+  #  tfacts.add_field "Confidence" do |tf,values|
+  #    sign,species,source,pmids = values
+  #    (source.downcase == "pubmed" and (pmids.split(";") - flagged).empty?) ? "Low" : "High"
+  #  end
+  #
+  #  tsv = step(:ExTRI_final).load
 
-    tsv = attach_db tsv, htri, "HTRI"
-    tsv = attach_db tsv, trrust, "TRRUST"
-    tsv = attach_db tsv, tfacts, "TFactS"
-    #tsv = attach_db tsv, encode, "Encode"
-    tsv = attach_db tsv, goa, "GOA"
-    tsv = attach_db tsv, intact, "IntAct"
-    tsv = attach_db tsv, signor, "SIGNOR"
-    tsv = attach_db tsv, geredb, "GEREDB"
-    tsv = attach_db tsv, cyt_reg, "CytReg"
-    #tsv = attach_db tsv, thomas, "Thomas2015"
+  #  tsv = attach_db tsv, htri, "HTRI"
+  #  tsv = attach_db tsv, trrust, "TRRUST"
+  #  tsv = attach_db tsv, tfacts, "TFactS"
+  #  #tsv = attach_db tsv, encode, "Encode"
+  #  tsv = attach_db tsv, goa, "GOA"
+  #  tsv = attach_db tsv, intact, "IntAct"
+  #  tsv = attach_db tsv, signor, "SIGNOR"
+  #  tsv = attach_db tsv, geredb, "GEREDB"
+  #  tsv = attach_db tsv, cyt_reg, "CytReg"
+  #  #tsv = attach_db tsv, thomas, "Thomas2015"
 
-    tsv
-  end
+  #  tsv
+  #end
 
   desc <<-EOF 
 
@@ -142,9 +142,9 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
   dep :ExTRI_final, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
   input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold"]
   input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
-  task :pairs => :tsv do |confidence,include_HTRI|
+  input :ntnu_curated, :select, "Set of NTNU_Curated", "jun2023", :select_options => %w(jun2023 feb2023)
+  task :pairs => :tsv do |confidence,include_HTRI,ntnu_curated|
     orig = step(:ExTRI_final).load
-
     id_file = Organism.identifiers(ExTRI.organism)
 
     cyt_reg = CytReg.tf_cyt.tsv(:merge => true)
@@ -178,7 +178,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     #thomas = ExTRI.Thomas2015.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "class", "details", "sentence", "PMID"], :merge => true).unzip
     #cp = TFCheckpoint.tfs.tsv(:merge => true)
-
+    #
     dorotheaA = Dorothea.tf_tg.tsv(:merge => true).unzip(0, true)
     flagged = ExTRI.TFactS_flagged_articles.list
     tfacts.add_field "Confidence" do |tf,values|
