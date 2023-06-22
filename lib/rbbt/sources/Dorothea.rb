@@ -19,7 +19,7 @@ module Dorothea
   end
 
   Dorothea.claim Dorothea.tf_tg, :proc do 
-    dorotheaA = Dorothea.dorothea_a.tsv(:merge => true, :key_field => "source_genesymbol", :fields => %w(target_genesymbol references consensus_direction consensus_stimulation consensus_inhibition))
+    dorotheaA = Dorothea.dorothea_a.tsv(:one2one => true, :key_field => "source_genesymbol", :fields => %w(target_genesymbol references consensus_direction consensus_stimulation consensus_inhibition))
     dorotheaA.key_field = "Transcription Factor (Associated Gene Name)"
     dorotheaA.fields = ["Target Gene (Associated Gene Name)", "PMID", "Directed", "Stimulate", "Inhibit"]
 

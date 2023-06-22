@@ -23,6 +23,7 @@ ExTRI=/$PWD filter="*.rb *.R *.js *.sass *.haml *.tsv" {
    CytReg.rb
    Pavlidis.rb
    Dorothea.rb
+   Encode.rb
   }
   knowledge_base=rbbt/knowledge_base{
    ExTRI.rb
