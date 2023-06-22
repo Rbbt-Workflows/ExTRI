@@ -31,7 +31,7 @@ module IntAct
 
     dumper = TSV::Dumper.new :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "PMID", "Method ID"], :type => :double, :namespace => IntAct.organism
     dumper.init
-    parser = TSV::Parser.new(Rbbt.share.databases.ExTRI.Nov2017_update["Intact"])
+    parser = TSV::Parser.new(Rbbt.share.databases.ExTRI.Nov2017_update["Intact"].find)
     fields = parser.fields
     TSV.traverse parser, :into => dumper, :type => :line, :bar => true do |line|
       next if line =~ /^#/

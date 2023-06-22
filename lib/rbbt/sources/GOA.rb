@@ -115,7 +115,7 @@ module GO
     GO:0023019
     EOF
 
-    TSV.traverse Rbbt.share.databases.ExTRI.Feb2023_update.GO["TRI_from_GO_human-mouse-rat_200223.tsv"], :type => :list, :into => tsv, unnamed: false do |k,values,fields|
+    TSV.traverse Rbbt.share.databases.ExTRI.Feb2023_update.GO["TRI_from_GO_human-mouse-rat_200223.tsv"].find, :type => :list, :into => tsv, unnamed: false do |k,values,fields|
       NamedArray.setup(values, fields, k)
       tf = values["SYMBOL"]
       uni = gene2uniHsa[tf] || gene2uniMmu[tf] || gene2uniRno[tf]
