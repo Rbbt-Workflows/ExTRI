@@ -174,7 +174,7 @@ module ExTRI
     train = full.select(all_validation_keys)
     train.attach validation, :fields => ["Valid"]
     Open.write(file('train'), train.to_s)
-    data = nil
+    data, predictions, scores = nil
     TmpFile.with_file do |file|
       train.R <<-EOF
       rbbt.require('randomForest')
@@ -185,7 +185,7 @@ module ExTRI
       save(m, file='#{file}')
       EOF
 
-      data = full.R <<-EOF
+      predictions = full.R <<-EOF
       rbbt.require('randomForest')
       names(data) <- make.names(names(data))
       load('#{file}')
@@ -194,9 +194,26 @@ module ExTRI
       data = data.frame(predictions)
       rownames(data) <- names(predictions)
       EOF
-    end
 
-    data.select("predictions" => "Valid")
+      scores = full.R <<-EOF
+      rbbt.require('randomForest')
+      names(data) <- make.names(names(data))
+      load('#{file}')
+      predictions = predict(m, data)
+      probs = predict(m, data, type='prob')
+      probs = probs[!is.na(predictions),]
+      predictions = predictions[!is.na(predictions)]
+      data = data.frame(probs)
+      rownames(data) <- names(predictions)
+      EOF
+    end
+    Log.tsv predictions
+    Log.tsv scores
+
+    data = predictions.to_list.attach(scores, :fields => ["Valid"])
+    data.fields = %w(Prediction Probability)
+
+    data
   end
 
   #{{{ Add confidence to dataset
@@ -210,7 +227,8 @@ Takes the ExTRI_counts file and adds the prediction and threshold confidence.
 Both confidence calls are force to Low if the target gene is a signal transduction element.
   EOF
   task :ExTRI_confidence => :tsv  do
-    predicted = Set.new step(:prediction).load.keys
+    prediction_scores = step(:prediction).load.slice(["Probability"])
+    predicted = Set.new step(:prediction).load.select("Prediction" => "Valid").keys
     thresholded = Set.new step(:threshold).load.keys
     signal_transd = Rbbt.data["signal_transd.list"].list
 
@@ -223,6 +241,10 @@ Both confidence calls are force to Low if the target gene is a signal transducti
       else
         predicted.include?(k) ? "High" : "Low"
       end
+    end
+
+    tsv.add_field "Prediction confidence (score)" do |k,v|
+      prediction_scores[k]
     end
 
     score, pmids, sentences  = step(:threshold).inputs.values_at :score, :pmids, :sentences

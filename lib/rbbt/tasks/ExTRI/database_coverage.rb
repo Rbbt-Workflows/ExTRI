@@ -140,7 +140,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
   EOF
   dep :ExTRI_final, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
-  input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold"]
+  input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold", "score"]
   input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
   input :ntnu_curated, :select, "Set of NTNU_Curated", "jun2023", :select_options => %w(jun2023 feb2023)
   task :pairs => :tsv do |confidence,include_HTRI,ntnu_curated|
@@ -189,21 +189,39 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     tsv = TSV.setup({}, :key_field => "TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "[ExTRI] Confidence", "[ExTRI] PMID"], :type => :double, :namespace => ExTRI.organism)
 
-    confidence_field = orig.fields.select{|f| f.include? confidence}.first
-    pmids = {}
-    conf = {}
-    orig.through do |key,values|
-      c = values[confidence_field]
-      pmid, s, tf, tg = key.split(":")
-      pair =  [tf,tg]
-      pmids[pair] ||= []
-      pmids[pair] << pmid
-      conf[pair] = false if conf[pair].nil?
-      conf[pair] = true unless c == "Low"
-    end
+    if confidence == 'score'
+      confidence_field = 'Prediction confidence (score)'
+      pmids = {}
+      conf = {}
+      orig.through do |key,values|
+        c = values[confidence_field]
+        pmid, s, tf, tg = key.split(":")
+        pair =  [tf,tg]
+        pmids[pair] ||= []
+        pmids[pair] << pmid
+        conf[pair] = c 
+      end
 
-    pmids.each do |pair,pmids|
-      tsv[pair*":"] = [pair[0], pair[1], conf[pair] ? "High" : "Low", pmids * ";"]
+      pmids.each do |pair,pmids|
+        tsv[pair*":"] = [pair[0], pair[1], conf[pair], pmids * ";"]
+      end
+    else
+      confidence_field = orig.fields.select{|f| f.include? confidence}.first
+      pmids = {}
+      conf = {}
+      orig.through do |key,values|
+        c = values[confidence_field]
+        pmid, s, tf, tg = key.split(":")
+        pair =  [tf,tg]
+        pmids[pair] ||= []
+        pmids[pair] << pmid
+        conf[pair] = false if conf[pair].nil?
+        conf[pair] = true unless c == "Low"
+      end
+
+      pmids.each do |pair,pmids|
+        tsv[pair*":"] = [pair[0], pair[1], conf[pair] ? "High" : "Low", pmids * ";"]
+      end
     end
 
     tsv.add_field "[ExTRI] present" do
