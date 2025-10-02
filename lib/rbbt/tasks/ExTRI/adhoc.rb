@@ -256,4 +256,42 @@ A sentence matching a rule is removed.
 
     tsv
   end
+
+  dep :all_pmids
+  task :MeSH_frequencies => :tsv do
+    require 'rbbt/sources/pubmed'
+    require 'rbbt/sources/mesh'
+
+    tsv = TSV.setup({}, :key_field => "MeSH ID", :fields => ["Type", "Label", "Count"], :type => :list)
+
+
+    vocab = MeSH.vocabulary.tsv :persist => true
+
+    mesh = {}
+    substance = {}
+    pmids = step(:all_pmids).load
+    Misc.chunk(pmids, 1000) do |chunk|
+      iif chunk
+      PubMed.get_article(chunk).each do |pmid,article|
+        article.mesh.each do |term|
+          mesh[term] ||= 0
+          mesh[term] += 1
+        end
+        article.substance.each do |term|
+          substance[term] ||= 0
+          substance[term] += 1
+        end
+      end
+    end
+
+    mesh.each do |term,count|
+      tsv[term] = ["MeSH", vocab[term], count]
+    end
+
+    substance.each do |term,count|
+      tsv[term] = ["Substance", vocab[term], count]
+    end
+
+    tsv
+  end
 end

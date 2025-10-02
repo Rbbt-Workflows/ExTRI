@@ -78,7 +78,7 @@ Curation
     tsv
   end
 
-  Pavlidis.claim Pavlidis.tf_tg, :proc do 
+  Pavlidis.claim Pavlidis.tf_tg_pre_2021, :proc do 
     url = "https://doi.org/10.1371/journal.pcbi.1009484.s025"
 
     key_field, *fields =<<-EOF.split("\n")
@@ -106,4 +106,14 @@ Mode of action
     tsv
   end
 
+  Pavlidis.claim Pavlidis.tf_tg_2023, :proc do 
+    tsv = Rbbt.data.Pavlidis2023.tsv header_hash: '', tsv_grep: 'Pavlab', fields: %(Target_Symbol )
+    Log.tsv tsv
+    raise
+  end
+
+end
+
+if __FILE__ == $0
+  Log.tsv Pavlidis.tf_tg_2023.tsv
 end

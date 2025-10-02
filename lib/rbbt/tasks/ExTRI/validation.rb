@@ -172,7 +172,7 @@ module ExTRI
 
     require 'rbbt/util/R'
     train = full.select(all_validation_keys)
-    train.attach validation, :fields => ["Valid"]
+    train = train.attach validation, :fields => ["Valid"], insitu: false
     Open.write(file('train'), train.to_s)
     data, predictions, scores = nil
     TmpFile.with_file do |file|
@@ -207,8 +207,6 @@ module ExTRI
       rownames(data) <- names(predictions)
       EOF
     end
-    Log.tsv predictions
-    Log.tsv scores
 
     data = predictions.to_list.attach(scores, :fields => ["Valid"])
     data.fields = %w(Prediction Probability)

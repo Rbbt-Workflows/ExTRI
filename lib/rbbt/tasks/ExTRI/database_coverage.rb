@@ -139,12 +139,12 @@ List all TF:TG pairs across ExTRI and other resources along with confidence esti
 The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences or a score over 1.6.
 
   EOF
-  dep :ExTRI_final, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => []
-  input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold", "score"]
+  dep :ExTRI_final, :pmids => 2, :sentences => 2, :score => 1.6, :test_set => [], compute: :produce
+  input :confidence, :select, "Confidence criteria", "Prediction", :select_options => ["Prediction", "Threshold", "score", "none"]
   input :include_HTRI_low_conf, :boolean, "Include HTRI low confidence", false
   input :ntnu_curated, :select, "Set of NTNU_Curated", "jun2023", :select_options => %w(jun2023 feb2023)
   task :pairs => :tsv do |confidence,include_HTRI,ntnu_curated|
-    orig = step(:ExTRI_final).load
+    orig = step(:ExTRI_final).run
 
     id_file = Organism.identifiers(ExTRI.organism)
 
@@ -157,7 +157,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
     
     geredb = GEREDB.tf_tg.tsv(:key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Effect", "PMID"]).unzip(0,true)
 
-    pavlidis = Pavlidis.tf_tg.tsv(:merge => true)
+    pavlidis = Pavlidis.tf_tg_2021.tsv(:merge => true)
     pavlidis = pavlidis.unzip(0, true)
 
     intact = IntAct.tf_tg.tsv(:merge => true).unzip
@@ -189,45 +189,72 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
     tsv = TSV.setup({}, :key_field => "TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "[ExTRI] Confidence", "[ExTRI] PMID"], :type => :double, :namespace => ExTRI.organism)
 
+    orig_has_sign = orig.fields.include?("Sign")
+
+    tsv.fields += ["[ExTRI] Sign"] if orig_has_sign
+
     if confidence == 'score'
       confidence_field = 'Prediction confidence (score)'
+      confidence_field_index = orig.fields.index confidence_field
       pmids = {}
       conf = {}
-      orig.through do |key,values|
-        c = values[confidence_field]
+      sign = {}
+      orig.through unnamed: true do |key,values|
         pmid, s, tf, tg = key.split(":")
         pair =  [tf,tg]
         pmids[pair] ||= []
         pmids[pair] << pmid
-        conf[pair] = c 
+        sign[pair] ||= []
+        sign[pair] << values["Sign"] if orig_has_sign
+        if confidence_field_index
+          c = values[confidence_field_index]
+          conf[pair] = [conf[pair].to_f, c.to_f].max
+        end
       end
 
       pmids.each do |pair,pmids|
-        tsv[pair*":"] = [pair[0], pair[1], conf[pair], pmids * ";"]
+        if orig_has_sign
+          tsv[pair*":"] = [pair[0], pair[1], conf[pair], pmids * "|", sign[pair] * "|"]
+        else
+          tsv[pair*":"] = [pair[0], pair[1], conf[pair], pmids * "|"]
+        end
       end
     else
-      confidence_field = orig.fields.select{|f| f.include? confidence}.first
+      confidence_field = orig.fields.select{|f| f.include? confidence }.first
+      confidence_field_index = orig.fields.index confidence_field if confidence_field
+      sign_field = orig.fields.index "Sign" if orig_has_sign
       pmids = {}
       conf = {}
-      orig.through do |key,values|
-        c = values[confidence_field]
+      sign = {}
+      orig.through unnamed: true do |key,values|
         pmid, s, tf, tg = key.split(":")
         pair =  [tf,tg]
         pmids[pair] ||= []
         pmids[pair] << pmid
-        conf[pair] = false if conf[pair].nil?
-        conf[pair] = true unless c == "Low"
+
+        if confidence_field_index
+          c = values[confidence_field_index]
+          conf[pair] = false if conf[pair].nil?
+          conf[pair] = true unless c == "Low"
+        end
+
+        sign[pair] ||= []
+        sign[pair] << values[sign_field] if orig_has_sign
       end
 
       pmids.each do |pair,pmids|
-        tsv[pair*":"] = [pair[0], pair[1], conf[pair] ? "High" : "Low", pmids * ";"]
+        if orig_has_sign
+          tsv[pair*":"] = [pair[0], pair[1], conf[pair] ? "High" : "Low", pmids * "|", sign[pair] * "|"]
+        else
+          tsv[pair*":"] = [pair[0], pair[1], conf[pair] ? "High" : "Low", pmids * "|"]
+        end
       end
     end
 
+    tsv.unnamed = true
     tsv.add_field "[ExTRI] present" do
       "ExTRI"
     end
-
 
     [
       [htri, "HTRI"],
@@ -352,6 +379,8 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
   dep :pairs
   task :pairs_final => :tsv do
     tsv = step(:pairs).load
+    tsv.unnamed = true
+
     base_path = Rbbt.share.databases.ExTRI.Feb2023_update.TF_info
     lambert_genes = base_path.Lambert_source.tsv.keys
     lovering_genes = base_path.Lovering_source_download_23022023.tsv.keys

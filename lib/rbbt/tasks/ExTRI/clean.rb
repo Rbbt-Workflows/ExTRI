@@ -124,7 +124,7 @@ module ExTRI
   task :ExTRI_clean  => :tsv do
     p = TSV::Parser.new ExTRI.TF_full.find
 
-    translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => true, :persist => true
+    translation = Organism.identifiers(ExTRI.organism).index :target => "Associated Gene Name", :order => false, :persist => true
     dumper = TSV::Dumper.new :key_field => "PMID:Sentence ID:TF:TG", :fields => ["Transcription Factor (Associated Gene Name)", "Target Gene (Associated Gene Name)", "Interaction score", "Sentence"], :type => :list, :namespace => ExTRI.organism
     dumper.init
     tf_pos = 0
