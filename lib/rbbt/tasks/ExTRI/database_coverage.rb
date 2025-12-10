@@ -180,64 +180,45 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
 
         extri[pair*":"] = values
       end
-    elsif confidence == 'score'
-      confidence_field = 'Prediction confidence (score)'
-      confidence_field_index = orig.fields.index confidence_field
-      pmids = {}
-      conf = {}
-      sign = {}
-      orig.through unnamed: true do |key,values|
-        pmid, s, tf, tg = key.split(":")
-        pair =  [tf,tg]
-        pmids[pair] ||= []
-        pmids[pair] << pmid
-        sign[pair] ||= []
-        sign[pair] << values["Sign"] if orig_has_sign
-        if confidence_field_index
-          c = values[confidence_field_index]
-          conf[pair] = [conf[pair].to_f, c.to_f].max
-        end
-      end
-
-      pmids.each do |pair,pmids|
-        if orig_has_sign
-          extri[pair*":"] = [pair[0], pair[1], pmids * "|", conf[pair], sign[pair] * "|"]
-        else
-          extri[pair*":"] = [pair[0], pair[1], pmids * "|", conf[pair]]
-        end
-      end
     else
-      confidence_field = orig.fields.select{|f| f.include? confidence }.first
-      confidence_field_index = orig.fields.index confidence_field if confidence_field
-      sign_field = orig.fields.index "Sign" if orig_has_sign
+      if confidence == 'score'
+        confidence_field = 'Prediction confidence (score)'
+        confidence_field_index = orig.fields.index confidence_field
+      else
+        confidence_field = orig.fields.select{|f| f.include? confidence }.first
+        confidence_field_index = orig.fields.index confidence_field if confidence_field
+      end
+
       pmids = {}
-      conf = {}
       sign = {}
-      orig.through unnamed: true do |key,values|
+      conf = {}
+      type = {}
+      orig.through unnamed: false do |key,values|
         pmid, s, tf, tg = key.split(":")
         pair =  [tf,tg]
         pmids[pair] ||= []
         pmids[pair] << pmid
-
-        if confidence_field_index
-          c = values[confidence_field_index]
-          conf[pair] = false if conf[pair].nil?
-          conf[pair] = true unless c == "Low"
-        end
-
         sign[pair] ||= []
-        sign[pair] << values[sign_field] if orig_has_sign
+        conf[pair] ||= []
+        sign[pair] << values["Sign"] if orig_has_sign
+        conf[pair] << values[confidence_field_index]
+        type[pair] = values["Transcription Factor Type"] if orig_has_type
       end
 
       pmids.each do |pair,pmids|
+        values = [pmids]
+        values << conf[pair]
         if orig_has_sign
-          extri[pair*":"] = [pair[0], pair[1], pmids * "|", conf[pair] ? "High" : "Low", sign[pair] * "|"]
-        else
-          extri[pair*":"] = [pair[0], pair[1], pmids * "|", conf[pair] ? "High" : "Low"]
+          values << sign[pair]
         end
+
+        if orig_has_type
+          values << [type[pair]]
+        end
+
+        extri[pair*":"] = values
       end
     end
-    Log.tsv extri
 
     [
       [extri, "ExTRI"],
@@ -434,7 +415,7 @@ The confidence estimate for ExTRI pairs uses by default 2 PMIDs or 2 sentences o
         .select do |name,genes| 
           genes.include? g
         end
-        .collect{|name,genes| name }
+          .collect{|name,genes| name }
     end
 
     tfclass = TFClass.tfs.list
